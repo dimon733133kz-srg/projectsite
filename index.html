@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тестовая регистрация</title>
+</head>
+<body>
+
+ 
+  <div id="register-form">
+    <h1>Регистрация</h1>
+
+    <label>Имя:</label><br>
+    <input type="text" id="reg-name" placeholder="Твоё имя"><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" id="reg-email" placeholder="email@example.com"><br><br>
+
+    <label>Пароль:</label><br>
+    <input type="password" id="reg-password" placeholder="Пароль"><br><br>
+
+    <button onclick="register()">Зарегистрироваться</button>
+
+    <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+  </div>
+
+  <div id="login-form" style="display: none;">
+    <h1>Вход</h1>
+
+    <label>Email:</label><br>
+    <input type="email" id="login-email" placeholder="email@example.com"><br><br>
+
+    <label>Пароль:</label><br>
+    <input type="password" id="login-password" placeholder="Пароль"><br><br>
+
+    <button onclick="login()">Войти</button>
+
+    <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
+  </div>
+
+  <script>
+    function showLogin() {
+      document.getElementById('register-form').style.display = 'none';
+      document.getElementById('login-form').style.display = 'block';
+    }
+
+    function showRegister() {
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('register-form').style.display = 'block';
+    }
+
+    // пока что это заглушка без fetch какого либо
+    function register() {
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+
+      if (!name || !email || !password) {
+        alert('Заполни все поля!');
+        return;
+      }
+
+      // вот здесь будет fetch на сайт ТУТ РЕГИСТРАЦИЯ
+      // fetch('адрес api сюда', { method: 'POST', body: JSON.stringify({name, email, password}) })
+      alert('Тест');
+    }
+
+    function login() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      if (!email || !password) {
+        alert('Заполни все поля!');
+        return;
+      }
+
+      // здесь нужно будет сделать отправку данных на бэкэнд тоже ТУТ ЛОГИН
+      // fetch('бэкэнд', { method: 'POST', body: JSON.stringify({email, password}) })
+      alert('Тест');
+    }
+  </script>
+
+</body>
+</html>
