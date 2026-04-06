@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Тестовая регистрация</title>
+  <title>Мой сайт</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
- 
   <div id="register-form">
     <h1>Регистрация</h1>
-
-    <label>Имя:</label><br>
-    <input type="text" id="reg-name" placeholder="Твоё имя"><br><br>
 
     <label>Email:</label><br>
     <input type="email" id="reg-email" placeholder="email@example.com"><br><br>
 
     <label>Пароль:</label><br>
-    <input type="password" id="reg-password" placeholder="Пароль"><br><br>
+    <input type="password" id="reg-password" placeholder="Минимум 6 символов"><br><br>
 
     <button onclick="register()">Зарегистрироваться</button>
+    <p id="reg-message"></p>
 
     <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
   </div>
@@ -35,49 +34,90 @@
     <input type="password" id="login-password" placeholder="Пароль"><br><br>
 
     <button onclick="login()">Войти</button>
+    <p id="login-message"></p>
 
     <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
   </div>
+  
+  <div id="main-page" style="display: none;">
+    <h1>Добро пожаловать!</h1>
+    <p id="user-email"></p>
+    <button onclick="logout()">Выйти</button>
+  </div>
 
   <script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    window.onload = async () => {
+      const { data: { session } } = await client.auth.getSession()
+      if (session) {
+        showMainPage(session.user.email)
+      }
+    }
+
     function showLogin() {
-      document.getElementById('register-form').style.display = 'none';
-      document.getElementById('login-form').style.display = 'block';
+      document.getElementById('register-form').style.display = 'none'
+      document.getElementById('login-form').style.display = 'block'
     }
 
     function showRegister() {
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('register-form').style.display = 'block';
+      document.getElementById('login-form').style.display = 'none'
+      document.getElementById('register-form').style.display = 'block'
     }
 
-    // пока что это заглушка без fetch какого либо
-    function register() {
-      const name = document.getElementById('reg-name').value;
-      const email = document.getElementById('reg-email').value;
-      const password = document.getElementById('reg-password').value;
-
-      if (!name || !email || !password) {
-        alert('Заполни все поля!');
-        return;
-      }
-
-      // вот здесь будет fetch на сайт ТУТ РЕГИСТРАЦИЯ
-      // fetch('адрес api сюда', { method: 'POST', body: JSON.stringify({name, email, password}) })
-      alert('Тест');
+    function showMainPage(email) {
+      document.getElementById('register-form').style.display = 'none'
+      document.getElementById('login-form').style.display = 'none'
+      document.getElementById('main-page').style.display = 'block'
+      document.getElementById('user-email').textContent = 'Вы вошли как: ' + email
     }
 
-    function login() {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
+    async function register() {
+      const email = document.getElementById('reg-email').value
+      const password = document.getElementById('reg-password').value
+      const msg = document.getElementById('reg-message')
 
       if (!email || !password) {
-        alert('Заполни все поля!');
-        return;
+        msg.textContent = 'Заполни все поля!'
+        return
       }
 
-      // здесь нужно будет сделать отправку данных на бэкэнд тоже ТУТ ЛОГИН
-      // fetch('бэкэнд', { method: 'POST', body: JSON.stringify({email, password}) })
-      alert('Тест');
+      const { error } = await client.auth.signUp({ email, password })
+
+      if (error) {
+        msg.textContent = 'Ошибка: ' + error.message
+      } else {
+        msg.textContent = '✅ Проверь почту - мы отправили письмо для подтверждения!'
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById('login-email').value
+      const password = document.getElementById('login-password').value
+      const msg = document.getElementById('login-message')
+
+      if (!email || !password) {
+        msg.textContent = 'Заполни все поля!'
+        return
+      }
+
+      const { data, error } = await client.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        msg.textContent = 'Ошибка: ' + error.message
+      } else {
+        showMainPage(data.user.email)
+      }
+    }
+
+    async function logout() {
+      await client.auth.signOut()
+      document.getElementById('main-page').style.display = 'none'
+      document.getElementById('register-form').style.display = 'block'
     }
   </script>
 
