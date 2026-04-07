@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Мой сайт</title>
+  <title>Вход</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -40,7 +40,7 @@
     <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
   </div>
 
-  <!-- ФОРМА ИМЕНИ И ФАМИЛИИ (только при первом входе) -->
+  <!-- ФОРМА ИМЕНИ И ФАМИЛИИ -->
   <div id="profile-form" style="display: none;">
     <h1>Как тебя зовут?</h1>
     <p>Это нужно сделать только один раз</p>
@@ -55,23 +55,15 @@
     <p id="profile-message"></p>
   </div>
 
-  <!-- ГЛАВНАЯ СТРАНИЦА -->
-  <div id="main-page" style="display: none;">
-    <h1>Добро пожаловать!</h1>
-    <p id="user-name"></p>
-    <button onclick="logout()">Выйти</button>
-  </div>
-
-  <script>    // ВСТАВЬ СЮДА СВОИ КЛЮЧИ
+  <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    // Только кириллица и дефис (для двойных имен)
     const cyrillicRegex = /^[А-ЯЁа-яё\-]+$/
 
-    // Проверяем при загрузке страницы
     window.onload = async () => {
       const { data: { session } } = await client.auth.getSession()
       if (session) {
@@ -79,7 +71,6 @@
       }
     }
 
-    // Проверяем есть ли уже имя/фамилия у пользователя
     async function checkProfile(userId) {
       const { data, error } = await client
         .from('profiles')
@@ -88,15 +79,12 @@
         .single()
 
       if (error || !data) {
-        // Профиля нет — просим ввести имя
         showProfileForm()
       } else {
-        // Профиль есть — на главную
-        showMainPage(data.first_name, data.last_name)
+        window.location.href = 'main.html'
       }
     }
 
-    // Переключение форм
     function showLogin() {
       document.getElementById('register-form').style.display = 'none'
       document.getElementById('login-form').style.display = 'block'
@@ -111,30 +99,16 @@
       document.getElementById('register-form').style.display = 'none'
       document.getElementById('login-form').style.display = 'none'
       document.getElementById('profile-form').style.display = 'block'
-      document.getElementById('main-page').style.display = 'none'
     }
 
-    function showMainPage(firstName, lastName) {
-      document.getElementById('register-form').style.display = 'none'
-      document.getElementById('login-form').style.display = 'none'
-      document.getElementById('profile-form').style.display = 'none'
-      document.getElementById('main-page').style.display = 'block'
-      document.getElementById('user-name').textContent = firstName + ' ' + lastName
-    }
-
-    // Регистрация
     async function register() {
       const email = document.getElementById('reg-email').value
       const password = document.getElementById('reg-password').value
       const msg = document.getElementById('reg-message')
 
-      if (!email || !password) {
-        msg.textContent = 'Заполни все поля!'
-        return
-      }
+      if (!email || !password) { msg.textContent = 'Заполни все поля!'; return }
 
       const { error } = await client.auth.signUp({ email, password })
-
       if (error) {
         msg.textContent = 'Ошибка: ' + error.message
       } else {
@@ -142,47 +116,29 @@
       }
     }
 
-    // Логин
     async function login() {
       const email = document.getElementById('login-email').value
       const password = document.getElementById('login-password').value
       const msg = document.getElementById('login-message')
 
-      if (!email || !password) {
-        msg.textContent = 'Заполни все поля!'
-        return
-      }
+      if (!email || !password) { msg.textContent = 'Заполни все поля!'; return }
 
       const { data, error } = await client.auth.signInWithPassword({ email, password })
-
       if (error) {
         msg.textContent = 'Ошибка: ' + error.message
         return
       }
-
       await checkProfile(data.user.id)
     }
 
-    // Сохранение имени и фамилии
     async function saveProfile() {
       const firstName = document.getElementById('first-name').value.trim()
       const lastName = document.getElementById('last-name').value.trim()
       const msg = document.getElementById('profile-message')
 
-      if (!firstName || !lastName) {
-        msg.textContent = 'Заполни оба поля!'
-        return
-      }
-
-      if (!cyrillicRegex.test(firstName)) {
-        msg.textContent = 'Имя должно содержать только кириллицу!'
-        return
-      }
-
-      if (!cyrillicRegex.test(lastName)) {
-        msg.textContent = 'Фамилия должна содержать только кириллицу!'
-        return
-      }
+      if (!firstName || !lastName) { msg.textContent = 'Заполни оба поля!'; return }
+      if (!cyrillicRegex.test(firstName)) { msg.textContent = 'Имя должно содержать только кириллицу!'; return }
+      if (!cyrillicRegex.test(lastName)) { msg.textContent = 'Фамилия должна содержать только кириллицу!'; return }
 
       const { data: { session } } = await client.auth.getSession()
       const userId = session.user.id
@@ -194,15 +150,8 @@
       if (error) {
         msg.textContent = 'Ошибка: ' + error.message
       } else {
-        showMainPage(firstName, lastName)
+        window.location.href = 'main.html'
       }
-    }
-
-    // Выход
-    async function logout() {
-      await client.auth.signOut()
-      document.getElementById('main-page').style.display = 'none'
-      document.getElementById('register-form').style.display = 'block'
     }
   </script>
 
