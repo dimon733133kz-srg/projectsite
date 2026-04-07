@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Мой сайт</title>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+  <!-- ФОРМА РЕГИСТРАЦИИ -->
   <div id="register-form">
     <h1>Регистрация</h1>
 
@@ -24,6 +24,7 @@
     <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
   </div>
 
+  <!-- ФОРМА ЛОГИНА -->
   <div id="login-form" style="display: none;">
     <h1>Вход</h1>
 
@@ -38,27 +39,64 @@
 
     <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
   </div>
-  
+
+  <!-- ФОРМА ИМЕНИ И ФАМИЛИИ (только при первом входе) -->
+  <div id="profile-form" style="display: none;">
+    <h1>Как тебя зовут?</h1>
+    <p>Это нужно сделать только один раз</p>
+
+    <label>Имя:</label><br>
+    <input type="text" id="first-name" placeholder="Например: Дмитрий"><br><br>
+
+    <label>Фамилия:</label><br>
+    <input type="text" id="last-name" placeholder="Например: Иванов"><br><br>
+
+    <button onclick="saveProfile()">Сохранить</button>
+    <p id="profile-message"></p>
+  </div>
+
+  <!-- ГЛАВНАЯ СТРАНИЦА -->
   <div id="main-page" style="display: none;">
     <h1>Добро пожаловать!</h1>
-    <p id="user-email"></p>
+    <p id="user-name"></p>
     <button onclick="logout()">Выйти</button>
   </div>
 
-  <script>
+  <script>    // ВСТАВЬ СЮДА СВОИ КЛЮЧИ
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
-
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+    // Только кириллица и дефис (для двойных имен)
+    const cyrillicRegex = /^[А-ЯЁа-яё\-]+$/
+
+    // Проверяем при загрузке страницы
     window.onload = async () => {
       const { data: { session } } = await client.auth.getSession()
       if (session) {
-        showMainPage(session.user.email)
+        await checkProfile(session.user.id)
       }
     }
 
+    // Проверяем есть ли уже имя/фамилия у пользователя
+    async function checkProfile(userId) {
+      const { data, error } = await client
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', userId)
+        .single()
+
+      if (error || !data) {
+        // Профиля нет — просим ввести имя
+        showProfileForm()
+      } else {
+        // Профиль есть — на главную
+        showMainPage(data.first_name, data.last_name)
+      }
+    }
+
+    // Переключение форм
     function showLogin() {
       document.getElementById('register-form').style.display = 'none'
       document.getElementById('login-form').style.display = 'block'
@@ -69,13 +107,22 @@
       document.getElementById('register-form').style.display = 'block'
     }
 
-    function showMainPage(email) {
+    function showProfileForm() {
       document.getElementById('register-form').style.display = 'none'
       document.getElementById('login-form').style.display = 'none'
-      document.getElementById('main-page').style.display = 'block'
-      document.getElementById('user-email').textContent = 'Вы вошли как: ' + email
+      document.getElementById('profile-form').style.display = 'block'
+      document.getElementById('main-page').style.display = 'none'
     }
 
+    function showMainPage(firstName, lastName) {
+      document.getElementById('register-form').style.display = 'none'
+      document.getElementById('login-form').style.display = 'none'
+      document.getElementById('profile-form').style.display = 'none'
+      document.getElementById('main-page').style.display = 'block'
+      document.getElementById('user-name').textContent = firstName + ' ' + lastName
+    }
+
+    // Регистрация
     async function register() {
       const email = document.getElementById('reg-email').value
       const password = document.getElementById('reg-password').value
@@ -91,10 +138,11 @@
       if (error) {
         msg.textContent = 'Ошибка: ' + error.message
       } else {
-        msg.textContent = '✅ Проверь почту - мы отправили письмо для подтверждения!'
+        msg.textContent = '✅ Проверь почту — отправили письмо для подтверждения!'
       }
     }
 
+    // Логин
     async function login() {
       const email = document.getElementById('login-email').value
       const password = document.getElementById('login-password').value
@@ -109,11 +157,48 @@
 
       if (error) {
         msg.textContent = 'Ошибка: ' + error.message
+        return
+      }
+
+      await checkProfile(data.user.id)
+    }
+
+    // Сохранение имени и фамилии
+    async function saveProfile() {
+      const firstName = document.getElementById('first-name').value.trim()
+      const lastName = document.getElementById('last-name').value.trim()
+      const msg = document.getElementById('profile-message')
+
+      if (!firstName || !lastName) {
+        msg.textContent = 'Заполни оба поля!'
+        return
+      }
+
+      if (!cyrillicRegex.test(firstName)) {
+        msg.textContent = 'Имя должно содержать только кириллицу!'
+        return
+      }
+
+      if (!cyrillicRegex.test(lastName)) {
+        msg.textContent = 'Фамилия должна содержать только кириллицу!'
+        return
+      }
+
+      const { data: { session } } = await client.auth.getSession()
+      const userId = session.user.id
+
+      const { error } = await client
+        .from('profiles')
+        .insert({ id: userId, first_name: firstName, last_name: lastName })
+
+      if (error) {
+        msg.textContent = 'Ошибка: ' + error.message
       } else {
-        showMainPage(data.user.email)
+        showMainPage(firstName, lastName)
       }
     }
 
+    // Выход
     async function logout() {
       await client.auth.signOut()
       document.getElementById('main-page').style.display = 'none'
