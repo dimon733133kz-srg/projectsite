@@ -4,60 +4,85 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Вход</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- ФОРМА РЕГИСТРАЦИИ -->
-  <div id="register-form">
-    <h1>Регистрация</h1>
+  <!-- ШАПКА -->
+  <header>
+    <div class="logo">
+      <a href="https://kvptk.edu.kz/ru" target="_blank">
+        <img src="logo.png" alt="Логотип">
+      </a>
+    </div>
+  </header>
 
-    <label>Email:</label><br>
-    <input type="email" id="reg-email" placeholder="email@example.com"><br><br>
+  <!-- ЦЕНТР -->
+  <div class="auth-wrapper">
 
-    <label>Пароль:</label><br>
-    <input type="password" id="reg-password" placeholder="Минимум 6 символов"><br><br>
+    <!-- ФОРМА РЕГИСТРАЦИИ -->
+    <div class="auth-box" id="register-form">
+      <h1>Регистрация</h1>
 
-    <button onclick="register()">Зарегистрироваться</button>
-    <p id="reg-message"></p>
+      <div class="name-row">
+        <div>
+          <label>Имя</label>
+          <input type="text" id="reg-firstname" placeholder="Дмитрий">
+        </div>
+        <div>
+          <label>Фамилия</label>
+          <input type="text" id="reg-lastname" placeholder="Иванов">
+        </div>
+      </div>
 
-    <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="email@example.com">
+
+      <label>Пароль</label>
+      <input type="password" id="reg-password" placeholder="Минимум 6 символов">
+
+      <button onclick="register()">Зарегистрироваться</button>
+      <p class="auth-message" id="reg-message"></p>
+
+      <div class="switch-link">
+        Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a>
+      </div>
+    </div>
+
+    <!-- ФОРМА ЛОГИНА -->
+    <div class="auth-box" id="login-form" style="display: none;">
+      <h1>Вход</h1>
+
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="email@example.com">
+
+      <label>Пароль</label>
+      <input type="password" id="login-password" placeholder="Пароль">
+
+      <button onclick="login()">Войти</button>
+      <p class="auth-message" id="login-message"></p>
+
+      <div class="switch-link">
+        Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a>
+      </div>
+    </div>
+
   </div>
 
-  <!-- ФОРМА ЛОГИНА -->
-  <div id="login-form" style="display: none;">
-    <h1>Вход</h1>
-
-    <label>Email:</label><br>
-    <input type="email" id="login-email" placeholder="email@example.com"><br><br>
-
-    <label>Пароль:</label><br>
-    <input type="password" id="login-password" placeholder="Пароль"><br><br>
-
-    <button onclick="login()">Войти</button>
-    <p id="login-message"></p>
-
-    <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
-  </div>
-
-  <!-- ФОРМА ИМЕНИ И ФАМИЛИИ -->
-  <div id="profile-form" style="display: none;">
-    <h1>Как тебя зовут?</h1>
-    <p>Это нужно сделать только один раз</p>
-
-    <label>Имя:</label><br>
-    <input type="text" id="first-name" placeholder="Например: Дмитрий"><br><br>
-
-    <label>Фамилия:</label><br>
-    <input type="text" id="last-name" placeholder="Например: Иванов"><br><br>
-
-    <button onclick="saveProfile()">Сохранить</button>
-    <p id="profile-message"></p>
-  </div>
+  <!-- ПОДВАЛ -->
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Имя Фамилия 1</span></span>
+      <span>Разработчик: <span class="credit-person">Имя Фамилия 2</span></span>
+    </div>
+    <div>© 2025 Название проекта. Все права защищены.</div>
+  </footer>
 
   <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -67,20 +92,6 @@
     window.onload = async () => {
       const { data: { session } } = await client.auth.getSession()
       if (session) {
-        await checkProfile(session.user.id)
-      }
-    }
-
-    async function checkProfile(userId) {
-      const { data, error } = await client
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', userId)
-        .single()
-
-      if (error || !data) {
-        showProfileForm()
-      } else {
         window.location.href = 'main.html'
       }
     }
@@ -95,63 +106,69 @@
       document.getElementById('register-form').style.display = 'block'
     }
 
-    function showProfileForm() {
-      document.getElementById('register-form').style.display = 'none'
-      document.getElementById('login-form').style.display = 'none'
-      document.getElementById('profile-form').style.display = 'block'
+    function setMessage(id, text, isSuccess = false) {
+      const el = document.getElementById(id)
+      el.textContent = text
+      el.className = 'auth-message' + (isSuccess ? ' success' : '')
     }
 
     async function register() {
-      const email = document.getElementById('reg-email').value
+      const firstName = document.getElementById('reg-firstname').value.trim()
+      const lastName = document.getElementById('reg-lastname').value.trim()
+      const email = document.getElementById('reg-email').value.trim()
       const password = document.getElementById('reg-password').value
-      const msg = document.getElementById('reg-message')
 
-      if (!email || !password) { msg.textContent = 'Заполни все поля!'; return }
-
-      const { error } = await client.auth.signUp({ email, password })
-      if (error) {
-        msg.textContent = 'Ошибка: ' + error.message
-      } else {
-        msg.textContent = '✅ Проверь почту — отправили письмо для подтверждения!'
-      }
-    }
-
-    async function login() {
-      const email = document.getElementById('login-email').value
-      const password = document.getElementById('login-password').value
-      const msg = document.getElementById('login-message')
-
-      if (!email || !password) { msg.textContent = 'Заполни все поля!'; return }
-
-      const { data, error } = await client.auth.signInWithPassword({ email, password })
-      if (error) {
-        msg.textContent = 'Ошибка: ' + error.message
+      if (!firstName || !lastName || !email || !password) {
+        setMessage('reg-message', 'Заполни все поля!')
         return
       }
-      await checkProfile(data.user.id)
-    }
+      if (!cyrillicRegex.test(firstName)) {
+        setMessage('reg-message', 'Имя должно содержать только кириллицу!')
+        return
+      }
+      if (!cyrillicRegex.test(lastName)) {
+        setMessage('reg-message', 'Фамилия должна содержать только кириллицу!')
+        return
+      }
 
-    async function saveProfile() {
-      const firstName = document.getElementById('first-name').value.trim()
-      const lastName = document.getElementById('last-name').value.trim()
-      const msg = document.getElementById('profile-message')
+      const { data, error } = await client.auth.signUp({ email, password })
 
-      if (!firstName || !lastName) { msg.textContent = 'Заполни оба поля!'; return }
-      if (!cyrillicRegex.test(firstName)) { msg.textContent = 'Имя должно содержать только кириллицу!'; return }
-      if (!cyrillicRegex.test(lastName)) { msg.textContent = 'Фамилия должна содержать только кириллицу!'; return }
+      if (error) {
+        setMessage('reg-message', 'Ошибка: ' + error.message)
+        return
+      }
 
-      const { data: { session } } = await client.auth.getSession()
-      const userId = session.user.id
-
-      const { error } = await client
+      // Сохраняем имя и фамилию сразу
+      const userId = data.user.id
+      const { error: profileError } = await client
         .from('profiles')
         .insert({ id: userId, first_name: firstName, last_name: lastName })
 
-      if (error) {
-        msg.textContent = 'Ошибка: ' + error.message
-      } else {
-        window.location.href = 'main.html'
+      if (profileError) {
+        setMessage('reg-message', 'Ошибка профиля: ' + profileError.message)
+        return
       }
+
+      setMessage('reg-message', '✅ Проверь почту — отправили письмо для подтверждения!', true)
+    }
+
+    async function login() {
+      const email = document.getElementById('login-email').value.trim()
+      const password = document.getElementById('login-password').value
+
+      if (!email || !password) {
+        setMessage('login-message', 'Заполни все поля!')
+        return
+      }
+
+      const { error } = await client.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        setMessage('login-message', 'Ошибка: ' + error.message)
+        return
+      }
+
+      window.location.href = 'main.html'
     }
   </script>
 

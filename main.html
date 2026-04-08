@@ -4,193 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Главная</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      font-family: sans-serif;
-    }
-
-    /* ========== ШАПКА ========== */
-    header {
-      height: 80px;
-      background: linear-gradient(to right, #2d0a4e, #6a1fa0);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 30px;
-    }
-
-    /* Логотип */
-    .logo a {
-      display: block;
-      height: 60px;
-    }
-
-    .logo img {
-      height: 100%;
-      width: auto;
-      object-fit: contain;
-    }
-
-    /* Профиль справа */
-    .profile {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-    }
-
-    .profile:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    /* Иконка пользователя */
-    .profile-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-
-    .profile-name {
-      font-size: 15px;
-      font-weight: 500;
-    }
-
-    /* Стрелочка вниз */
-    .profile-arrow {
-      font-size: 11px;
-      opacity: 0.7;
-    }
-
-    /* Контекстное меню */
-    .dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      min-width: 180px;
-      overflow: hidden;
-      z-index: 100;
-    }
-
-    .profile:hover .dropdown {
-      display: block;
-    }
-
-    .dropdown a {
-      display: block;
-      padding: 12px 16px;
-      color: #333;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .dropdown a:hover {
-      background: #f5f5f5;
-    }
-
-    .dropdown .divider {
-      height: 1px;
-      background: #eee;
-    }
-
-    .dropdown .logout {
-      color: #c0392b;
-    }
-
-    /* ========== КОНТЕНТ ========== */
-    main {
-      flex: 1;
-      padding: 40px 30px;
-      background: #f9f9f9;
-    }
-
-    /* ========== ПОДВАЛ ========== */
-    footer {
-      background: #1a0530;
-      color: rgba(255,255,255,0.6);
-      padding: 24px 30px;
-      text-align: center;
-      font-size: 13px;
-      line-height: 2;
-    }
-
-    footer .credits {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    footer .credit-person {
-      color: rgba(255,255,255,0.85);
-      font-weight: 500;
-    }
-  </style>
 </head>
 <body>
 
   <!-- ШАПКА -->
   <header>
-
     <div class="logo">
       <a href="https://kvptk.edu.kz/ru" target="_blank">
         <img src="logo.png" alt="Логотип">
       </a>
     </div>
 
-    <!-- Профиль справа -->
-    <div class="profile">
+    <!-- Профиль — клик открывает/закрывает меню -->
+    <div class="profile" id="profile-btn" onclick="toggleDropdown()">
       <div class="profile-icon">👤</div>
       <span class="profile-name" id="profile-name">Загрузка...</span>
       <span class="profile-arrow">▼</span>
 
-      <!-- Выпадающее меню -->
       <div class="dropdown">
-        <a href="#">Настройки</a>
+        <a href="#">⚙️ Настройки</a>
         <div class="divider"></div>
-        <a href="#" class="logout" onclick="logout()">Выйти из аккаунта</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
       </div>
     </div>
-
   </header>
 
+  <!-- КОНТЕНТ (пока пустой) -->
   <main>
+    <!-- Сюда потом добавим лекции, викторины и т.д. -->
   </main>
 
+  <!-- ПОДВАЛ -->
   <footer>
     <div class="credits">
-      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
-      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+      <span>Разработчик: <span class="credit-person">Имя Фамилия 1</span></span>
+      <span>Разработчик: <span class="credit-person">Имя Фамилия 2</span></span>
     </div>
-    <div>© 2026. Все права защищены.</div>
+    <div>© 2025 Название проекта. Все права защищены.</div>
   </footer>
 
   <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -216,6 +74,19 @@
 
       document.getElementById('profile-name').textContent = data.first_name + ' ' + data.last_name
     }
+
+    // Открыть/закрыть меню по клику
+    function toggleDropdown() {
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    // Закрыть меню если кликнули вне его
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) {
+        profile.classList.remove('open')
+      }
+    })
 
     async function logout() {
       await client.auth.signOut()

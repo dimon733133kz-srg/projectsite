@@ -1,0 +1,305 @@
+/* ========== ПЕРЕМЕННЫЕ ========== */
+:root {
+  --emerald: #34D399;
+  --navy: #1E3A8A;
+  --gold: #FACC15;
+  --purple: #7C3AED;
+  --purple-dark: #4C1D95;
+  --purple-light: #A78BFA;
+  --white: #ffffff;
+  --bg: #f0f4ff;
+  --text: #1e293b;
+  --text-muted: rgba(255,255,255,0.65);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ========== ШАПКА ========== */
+header {
+  height: 80px;
+  background: linear-gradient(to right, var(--navy), var(--purple));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+.logo a {
+  display: block;
+  height: 60px;
+}
+
+.logo img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ========== ПРОФИЛЬ В ШАПКЕ ========== */
+.profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  user-select: none;
+}
+
+.profile:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.profile-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--emerald);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--navy);
+  font-weight: bold;
+}
+
+.profile-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.profile-arrow {
+  font-size: 10px;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.profile.open .profile-arrow {
+  transform: rotate(180deg);
+}
+
+/* Выпадающее меню */
+.dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  min-width: 190px;
+  overflow: hidden;
+  z-index: 100;
+  border: 1px solid rgba(124,58,237,0.1);
+}
+
+.profile.open .dropdown {
+  display: block;
+}
+
+.dropdown a {
+  display: block;
+  padding: 13px 18px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+
+.dropdown a:hover {
+  background: #f5f3ff;
+  color: var(--purple);
+}
+
+.dropdown .divider {
+  height: 1px;
+  background: #eee;
+}
+
+.dropdown .logout {
+  color: #dc2626;
+}
+
+.dropdown .logout:hover {
+  background: #fff5f5;
+  color: #dc2626;
+}
+
+/* ========== ПОДВАЛ ========== */
+footer {
+  background: var(--navy);
+  color: var(--text-muted);
+  padding: 24px 30px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 2;
+}
+
+footer .credits {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+footer .credit-person {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* ========== КОНТЕНТ ========== */
+main {
+  flex: 1;
+  padding: 40px 30px;
+}
+
+/* ========== ФОРМА АВТОРИЗАЦИИ (index.html) ========== */
+.auth-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.auth-box {
+  background: white;
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(30,58,138,0.12);
+  border: 1px solid rgba(124,58,237,0.1);
+}
+
+.auth-box h1 {
+  color: var(--navy);
+  font-size: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.auth-box label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--purple-dark);
+  margin-bottom: 5px;
+  margin-top: 14px;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.auth-box input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+
+.auth-box button {
+  width: 100%;
+  margin-top: 22px;
+  padding: 12px;
+  background: linear-gradient(to right, var(--navy), var(--purple));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.auth-box button:hover {
+  opacity: 0.92;
+}
+
+.auth-box button:active {
+  transform: scale(0.98);
+}
+
+.auth-box .switch-link {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+  color: #666;
+}
+
+.auth-box .switch-link a {
+  color: var(--purple);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-box .switch-link a:hover {
+  text-decoration: underline;
+}
+
+.auth-message {
+  margin-top: 12px;
+  font-size: 13px;
+  text-align: center;
+  color: #dc2626;
+  min-height: 18px;
+}
+
+.auth-message.success {
+  color: #059669;
+}
+
+/* Разделитель между полями имени */
+.name-row {
+  display: flex;
+  gap: 12px;
+}
+
+.name-row > div {
+  flex: 1;
+}
+
+/* ========== АДАПТИВ ========== */
+@media (max-width: 480px) {
+  header {
+    padding: 0 16px;
+    height: 68px;
+  }
+
+  .auth-box {
+    padding: 28px 20px;
+  }
+
+  .name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  footer .credits {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
