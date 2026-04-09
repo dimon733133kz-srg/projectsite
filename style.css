@@ -49,6 +49,18 @@ header {
   object-fit: contain;
 }
 
+/* Заглушка если логотипа нет */
+.logo-placeholder {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
 /* ========== ПРОФИЛЬ В ШАПКЕ ========== */
 .profile {
   position: relative;
@@ -217,6 +229,23 @@ main {
 }
 
 .auth-box input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+
+.auth-box select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-box select:focus {
   border-color: var(--purple);
   box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
 }
