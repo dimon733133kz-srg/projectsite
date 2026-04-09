@@ -12,12 +12,14 @@
   <!-- ШАПКА -->
   <header>
     <div class="logo">
-      <a href="https://kvptk.edu.kz/ru" target="_blank">
+      <a href="" target="_blank" class="logo-placeholder">МОЙ САЙТ</a>
+      <!-- Когда добавишь логотип раскомментируй это и удали строку выше:
+      <a href="" target="_blank">
         <img src="logo.png" alt="Логотип">
       </a>
+      -->
     </div>
 
-    <!-- Профиль — клик открывает/закрывает меню -->
     <div class="profile" id="profile-btn" onclick="toggleDropdown()">
       <div class="profile-icon">👤</div>
       <span class="profile-name" id="profile-name">Загрузка...</span>
@@ -33,7 +35,6 @@
 
   <!-- КОНТЕНТ (пока пустой) -->
   <main>
-    <!-- Сюда потом добавим лекции, викторины и т.д. -->
   </main>
 
   <!-- ПОДВАЛ -->
@@ -42,7 +43,7 @@
       <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
       <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
     </div>
-    <div>©2026 Все права Защищены.</div>
+    <div>©2026 Все права защищены.</div>
   </footer>
 
   <script>
@@ -53,7 +54,7 @@
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    window.onload = async () => {
+    async function init() {
       const { data: { session } } = await client.auth.getSession()
 
       if (!session) {
@@ -63,7 +64,7 @@
 
       const { data, error } = await client
         .from('profiles')
-        .select('first_name, last_name')
+        .select('name')
         .eq('id', session.user.id)
         .single()
 
@@ -72,15 +73,15 @@
         return
       }
 
-      document.getElementById('profile-name').textContent = data.first_name + ' ' + data.last_name
+      document.getElementById('profile-name').textContent = data.name
     }
 
-    // Открыть/закрыть меню по клику
+    init()
+
     function toggleDropdown() {
       document.getElementById('profile-btn').classList.toggle('open')
     }
 
-    // Закрыть меню если кликнули вне его
     document.addEventListener('click', function(e) {
       const profile = document.getElementById('profile-btn')
       if (profile && !profile.contains(e.target)) {
