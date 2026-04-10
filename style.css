@@ -49,7 +49,6 @@ header {
   object-fit: contain;
 }
 
-/* Заглушка если логотипа нет */
 .logo-placeholder {
   height: 60px;
   display: flex;
@@ -180,7 +179,9 @@ footer .credit-person {
 /* ========== КОНТЕНТ ========== */
 main {
   flex: 1;
-  padding: 40px 30px;
+  padding: 30px;
+  display: flex;
+  align-items: stretch;
 }
 
 /* ========== ФОРМА АВТОРИЗАЦИИ (index.html) ========== */
@@ -301,18 +302,118 @@ main {
   color: #059669;
 }
 
-/* Разделитель между полями имени */
-.name-row {
-  display: flex;
-  gap: 12px;
+/* ========== СЕТКА КНОПОК (main.html) ========== */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+  min-height: calc(100vh - 80px - 80px - 60px);
 }
 
-.name-row > div {
-  flex: 1;
+.card {
+  background: linear-gradient(135deg, var(--navy), var(--purple));
+  border-radius: 18px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+  box-shadow: 0 4px 16px rgba(30,58,138,0.2);
+}
+
+.card:hover {
+  background: linear-gradient(135deg, #2a4fba, #9333ea);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(30,58,138,0.3);
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.card-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  transition: transform 0.3s;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.card:hover .card-icon {
+  transform: scale(1.08);
+}
+
+.card-icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.card-icon span {
+  font-size: 36px;
+}
+
+.card-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: transform 0.3s ease;
+  color: white;
+}
+
+.card:hover .card-title {
+  transform: translateY(-8px);
+}
+
+.card-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  text-align: center;
+  max-width: 220px;
+  margin-top: 6px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  position: absolute;
+  bottom: 28px;
+}
+
+.card:hover .card-desc {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--emerald);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.card:hover::after {
+  transform: scaleX(1);
 }
 
 /* ========== АДАПТИВ ========== */
-@media (max-width: 480px) {
+@media (max-width: 700px) {
   header {
     padding: 0 16px;
     height: 68px;
@@ -322,9 +423,47 @@ main {
     padding: 28px 20px;
   }
 
-  .name-row {
-    flex-direction: column;
-    gap: 0;
+  main {
+    padding: 20px 0;
+    overflow: hidden;
+  }
+
+  .cards-grid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 16px;
+    padding: 10px 20px;
+    min-height: unset;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .cards-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card {
+    min-width: 75vw;
+    min-height: 220px;
+    scroll-snap-align: center;
+    flex-shrink: 0;
+  }
+
+  .card-desc {
+    opacity: 1;
+    transform: translateY(0);
+    position: static;
+    margin-top: 8px;
+  }
+
+  .card-title {
+    transform: none !important;
+  }
+
+  .card:hover .card-title {
+    transform: none;
   }
 
   footer .credits {
