@@ -12,7 +12,7 @@
   <!-- ШАПКА -->
   <header>
     <div class="logo">
-      <a href="main.html" class="logo-placeholder">МОЙ САЙТ</a>
+      <a href="main.html" class="logo-placeholder">Заглушка </a>
     </div>
 
     <div class="profile" id="profile-btn" onclick="toggleDropdown()">
@@ -32,28 +32,28 @@
   <main>
     <div class="shop-layout">
 
-      <!-- ЛЕВАЯ ПАНЕЛЬ -->
-      <div class="shop-sidebar">
-
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Магазин</div>
-          <button class="sidebar-btn active" onclick="switchTab('buy', 'backgrounds', this)">
-            🖼️ Фон профиля
-          </button>
-        </div>
-
-        <div class="sidebar-section">
-          <div class="sidebar-section-title">Инвентарь</div>
-          <button class="sidebar-btn" onclick="switchTab('inventory', 'backgrounds', this)">
-            🎒 Фон профиля
-          </button>
-        </div>
-
+      <!-- КОЛОНКА 1: Режим -->
+      <div class="shop-modes">
+        <button class="mode-btn active" id="btn-buy" onclick="setMode('buy')">
+          <span class="mode-btn-icon">🛒</span>
+          Купить
+        </button>
+        <button class="mode-btn" id="btn-inventory" onclick="setMode('inventory')">
+          <span class="mode-btn-icon">🎒</span>
+          Инвентарь
+        </button>
       </div>
 
-      <!-- ПРАВАЯ ЧАСТЬ -->
-      <div class="shop-content">
+      <!-- КОЛОНКА 2: Разделы -->
+      <div class="shop-categories">
+        <div class="shop-categories-title">Разделы</div>
+        <button class="category-btn active" onclick="setCategory('backgrounds', this)">
+          🖼️ Фон профиля
+        </button>
+      </div>
 
+      <!-- КОЛОНКА 3: Товары -->
+      <div class="shop-content">
         <div class="shop-header">
           <div class="shop-title" id="shop-title">Купить — Фон профиля</div>
           <div class="money-badge">
@@ -62,11 +62,9 @@
           </div>
         </div>
 
-        <div class="items-grid" id="items-grid">
-          <!-- Товары загружаются через JS -->
-        </div>
-
+        <div class="items-grid" id="items-grid"></div>
       </div>
+
     </div>
   </main>
 
@@ -79,18 +77,19 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
-  <!-- УВЕДОМЛЕНИЕ -->
   <div class="toast" id="toast"></div>
 
   <script>
-const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     let currentUser = null
     let currentMode = 'buy'
+    let currentCategory = 'backgrounds'
     let ownedIds = []
 
     async function init() {
@@ -99,7 +98,7 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
 
       const { data, error } = await client
         .from('profiles')
-        .select('name, money')
+        .select('name, money, profile_bg')
         .eq('id', session.user.id)
         .single()
 
@@ -109,11 +108,29 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
       document.getElementById('profile-name').textContent = data.name
       document.getElementById('user-money').textContent = data.money ?? 0
 
+      // Загружаем фон профиля в шапку
+      if (data.profile_bg) {
+        await loadProfileBg(data.profile_bg)
+      }
+
       await loadOwned()
       await loadShopItems()
     }
 
-    // Загрузить купленные предметы пользователя
+    async function loadProfileBg(bgId) {
+      const { data: item } = await client
+        .from('shop_items')
+        .select('image_url')
+        .eq('id', bgId)
+        .single()
+
+      if (!item) return
+
+      const btn = document.getElementById('profile-btn')
+      btn.style.backgroundImage = `url('${item.image_url}')`
+      btn.classList.add('has-bg')
+    }
+
     async function loadOwned() {
       const { data } = await client
         .from('owned_avatars')
@@ -123,42 +140,36 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
       ownedIds = data ? data.map(d => d.item_id) : []
     }
 
-    // Переключение вкладок
-    async function switchTab(mode, category, btn) {
+    function setMode(mode) {
       currentMode = mode
-
-      // Убрать active у всех кнопок
-      document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-
-      const titles = {
-        'buy-backgrounds': 'Купить — Фон профиля',
-        'inventory-backgrounds': 'Инвентарь — Фон профиля'
-      }
-      document.getElementById('shop-title').textContent = titles[mode + '-' + category]
-
-      if (mode === 'buy') {
-        await loadShopItems()
-      } else {
-        await loadInventory()
-      }
+      document.getElementById('btn-buy').classList.toggle('active', mode === 'buy')
+      document.getElementById('btn-inventory').classList.toggle('active', mode === 'inventory')
+      updateTitle()
+      mode === 'buy' ? loadShopItems() : loadInventory()
     }
 
-    // Загрузить все товары из магазина
+    function setCategory(category, btn) {
+      currentCategory = category
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      updateTitle()
+      currentMode === 'buy' ? loadShopItems() : loadInventory()
+    }
+
+    function updateTitle() {
+      const modeLabel = currentMode === 'buy' ? 'Купить' : 'Инвентарь'
+      const catLabel = currentCategory === 'backgrounds' ? 'Фон профиля' : currentCategory
+      document.getElementById('shop-title').textContent = `${modeLabel} — ${catLabel}`
+    }
+
     async function loadShopItems() {
       const grid = document.getElementById('items-grid')
       grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
 
-      const { data, error } = await client
-        .from('shop_items')
-        .select('*')
+      const { data, error } = await client.from('shop_items').select('*')
 
       if (error || !data || data.length === 0) {
-        grid.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🛒</div>
-            <div class="empty-state-text">Товаров пока нет</div>
-          </div>`
+        grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-text">Товаров пока нет</div></div>`
         return
       }
 
@@ -169,37 +180,27 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
           <div class="item-card">
             ${item.image_url
               ? `<img class="item-img" src="${item.image_url}" alt="${item.name}">`
-              : `<div class="item-img-placeholder">🖼️</div>`
-            }
+              : `<div class="item-img-placeholder">🖼️</div>`}
             <div class="item-info">
               <div class="item-name">${item.name}</div>
-              <div class="item-price">
-                <span class="item-price-coin">🪙</span> ${item.price}
-              </div>
+              <div class="item-price"><span class="item-price-coin">🪙</span> ${item.price}</div>
               ${owned
                 ? `<button class="item-btn owned" disabled>✅ Куплено</button>`
-                : `<button class="item-btn buy" onclick="buyItem('${item.id}', ${item.price}, '${item.name}')">Купить</button>`
-              }
+                : `<button class="item-btn buy" onclick="buyItem('${item.id}', ${item.price}, '${item.name}')">Купить</button>`}
             </div>
           </div>`
       })
     }
 
-    // Загрузить инвентарь
     async function loadInventory() {
       const grid = document.getElementById('items-grid')
       grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
 
       if (ownedIds.length === 0) {
-        grid.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🎒</div>
-            <div class="empty-state-text">Инвентарь пуст — купи что-нибудь!</div>
-          </div>`
+        grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎒</div><div class="empty-state-text">Инвентарь пуст — купи что-нибудь!</div></div>`
         return
       }
 
-      // Загружаем профиль чтобы знать активный фон
       const { data: profile } = await client
         .from('profiles')
         .select('profile_bg')
@@ -225,20 +226,17 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
           <div class="item-card">
             ${item.image_url
               ? `<img class="item-img" src="${item.image_url}" alt="${item.name}">`
-              : `<div class="item-img-placeholder">🖼️</div>`
-            }
+              : `<div class="item-img-placeholder">🖼️</div>`}
             <div class="item-info">
               <div class="item-name">${item.name}</div>
               ${isEquipped
                 ? `<button class="item-btn equipped" disabled>✨ Активно</button>`
-                : `<button class="item-btn equip" onclick="equipItem('${item.id}', '${item.name}')">Надеть</button>`
-              }
+                : `<button class="item-btn equip" onclick="equipItem('${item.id}', '${item.name}')">Надеть</button>`}
             </div>
           </div>`
       })
     }
 
-    // Купить предмет
     async function buyItem(itemId, price, itemName) {
       const { data: profile } = await client
         .from('profiles')
@@ -246,12 +244,8 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
         .eq('id', currentUser.id)
         .single()
 
-      if (profile.money < price) {
-        showToast('Недостаточно монет!', 'error')
-        return
-      }
+      if (profile.money < price) { showToast('Недостаточно монет!', 'error'); return }
 
-      // Списываем деньги
       const { error: moneyError } = await client
         .from('profiles')
         .update({ money: profile.money - price })
@@ -259,7 +253,6 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
 
       if (moneyError) { showToast('Ошибка покупки', 'error'); return }
 
-      // Добавляем в инвентарь
       const { error: ownError } = await client
         .from('owned_avatars')
         .insert({ user_id: currentUser.id, item_id: itemId })
@@ -272,8 +265,13 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
       await loadShopItems()
     }
 
-    // Надеть предмет
     async function equipItem(itemId, itemName) {
+      const { data: item } = await client
+        .from('shop_items')
+        .select('image_url')
+        .eq('id', itemId)
+        .single()
+
       const { error } = await client
         .from('profiles')
         .update({ profile_bg: itemId })
@@ -281,11 +279,15 @@ const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
 
       if (error) { showToast('Ошибка', 'error'); return }
 
+      // Обновляем фон в шапке сразу
+      const btn = document.getElementById('profile-btn')
+      btn.style.backgroundImage = `url('${item.image_url}')`
+      btn.classList.add('has-bg')
+
       showToast(`✨ Активировано: ${itemName}`, 'success')
       await loadInventory()
     }
 
-    // Уведомление
     function showToast(msg, type = 'success') {
       const toast = document.getElementById('toast')
       toast.textContent = msg

@@ -12,9 +12,12 @@
   <!-- ШАПКА -->
   <header>
     <div class="logo">
+      <a href="" target="_blank" class="logo-placeholder">МОЙ САЙТ</a>
+      <!-- Когда добавишь логотип раскомментируй это и удали строку выше:
       <a href="" target="_blank">
         <img src="logo.png" alt="Логотип">
       </a>
+      -->
     </div>
 
     <div class="profile" id="profile-btn" onclick="toggleDropdown()">
@@ -23,9 +26,9 @@
       <span class="profile-arrow">▼</span>
 
       <div class="dropdown">
-        <a href="#">Настройки</a>
+        <a href="#">⚙️ Настройки</a>
         <div class="divider"></div>
-        <a href="#" class="logout" onclick="logout()">Выйти из аккаунта</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
       </div>
     </div>
   </header>
@@ -37,7 +40,8 @@
       <!-- Лекции -->
       <a class="card" href="lectures.html">
         <div class="card-icon">
-         <img src="icons/lectures.png" alt="Лекции">
+          <!-- <img src="icons/lectures.png" alt="Лекции"> -->
+          <span>📖</span>
         </div>
         <div class="card-title">Лекции</div>
         <div class="card-desc">Учебные материалы по Python</div>
@@ -46,7 +50,8 @@
       <!-- Викторины -->
       <a class="card" href="quiz.html">
         <div class="card-icon">
-          <img src="icons/quiz.png" alt="Викторины">
+          <!-- <img src="icons/quiz.png" alt="Викторины"> -->
+          <span>❓</span>
         </div>
         <div class="card-title">Викторины</div>
         <div class="card-desc">Проверь свои знания</div>
@@ -55,7 +60,8 @@
       <!-- Игры -->
       <a class="card" href="games.html">
         <div class="card-icon">
-         <img src="icons/games.png" alt="Игры">
+          <!-- <img src="icons/games.png" alt="Игры"> -->
+          <span>🎮</span>
         </div>
         <div class="card-title">Игры</div>
         <div class="card-desc">Обучение в игровом формате</div>
@@ -64,17 +70,18 @@
       <!-- Магазин -->
       <a class="card" href="shop.html">
         <div class="card-icon">
-          <img src="icons/shop.png" alt="Магазин">
-          <span></span>
+          <!-- <img src="icons/shop.png" alt="Магазин"> -->
+          <span>🛒</span>
         </div>
         <div class="card-title">Магазин</div>
-        <div class="card-desc">Используй очки здесь</div>
+        <div class="card-desc">Трать заработанные очки</div>
       </a>
 
       <!-- Лидеры -->
       <a class="card" href="leaderboard.html">
         <div class="card-icon">
-       <img src="icons/leaderboard.png" alt="Лидеры">
+          <!-- <img src="icons/leaderboard.png" alt="Лидеры"> -->
+          <span>🏆</span>
         </div>
         <div class="card-title">Лидеры</div>
         <div class="card-desc">Таблица лучших студентов</div>
@@ -83,7 +90,8 @@
       <!-- Группа -->
       <a class="card" href="group.html">
         <div class="card-icon">
-         <img src="icons/group.png" alt="Группа">
+          <!-- <img src="icons/group.png" alt="Группа"> -->
+          <span>👥</span>
         </div>
         <div class="card-title">Группа</div>
         <div class="card-desc">Участники твоей группы</div>
@@ -105,6 +113,7 @@
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
+
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -118,7 +127,7 @@
 
       const { data, error } = await client
         .from('profiles')
-        .select('name')
+        .select('name, profile_bg')
         .eq('id', session.user.id)
         .single()
 
@@ -128,9 +137,25 @@
       }
 
       document.getElementById('profile-name').textContent = data.name
+
+      if (data.profile_bg) {
+        await loadProfileBg(data.profile_bg)
+      }
     }
 
-    init()
+    async function loadProfileBg(bgId) {
+      const { data: item } = await client
+        .from('shop_items')
+        .select('image_url')
+        .eq('id', bgId)
+        .single()
+
+      if (!item) return
+
+      const btn = document.getElementById('profile-btn')
+      btn.style.backgroundImage = `url('${item.image_url}')`
+      btn.classList.add('has-bg')
+    }
 
     function toggleDropdown() {
       document.getElementById('profile-btn').classList.toggle('open')
@@ -147,6 +172,8 @@
       await client.auth.signOut()
       window.location.href = 'index.html'
     }
+
+    init()
   </script>
 
 </body>
