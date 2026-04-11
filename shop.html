@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Магазин</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ШАПКА -->
+  <header>
+    <div class="logo">
+      <a href="main.html" class="logo-placeholder">МОЙ САЙТ</a>
+    </div>
+
+    <div class="profile" id="profile-btn" onclick="toggleDropdown()">
+      <div class="profile-icon">👤</div>
+      <span class="profile-name" id="profile-name">Загрузка...</span>
+      <span class="profile-arrow">▼</span>
+
+      <div class="dropdown">
+        <a href="#">⚙️ Настройки</a>
+        <div class="divider"></div>
+        <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- КОНТЕНТ -->
+  <main>
+    <div class="shop-layout">
+
+      <!-- ЛЕВАЯ ПАНЕЛЬ -->
+      <div class="shop-sidebar">
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Магазин</div>
+          <button class="sidebar-btn active" onclick="switchTab('buy', 'backgrounds', this)">
+            🖼️ Фон профиля
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Инвентарь</div>
+          <button class="sidebar-btn" onclick="switchTab('inventory', 'backgrounds', this)">
+            🎒 Фон профиля
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ПРАВАЯ ЧАСТЬ -->
+      <div class="shop-content">
+
+        <div class="shop-header">
+          <div class="shop-title" id="shop-title">Купить — Фон профиля</div>
+          <div class="money-badge">
+            <span>🪙</span>
+            <span id="user-money">...</span>
+          </div>
+        </div>
+
+        <div class="items-grid" id="items-grid">
+          <!-- Товары загружаются через JS -->
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ПОДВАЛ -->
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
+
+  <!-- УВЕДОМЛЕНИЕ -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    let currentUser = null
+    let currentMode = 'buy'
+    let ownedIds = []
+
+    async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
+
+      const { data, error } = await client
+        .from('profiles')
+        .select('name, money')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !data) { window.location.href = 'index.html'; return }
+
+      currentUser = session.user
+      document.getElementById('profile-name').textContent = data.name
+      document.getElementById('user-money').textContent = data.money ?? 0
+
+      await loadOwned()
+      await loadShopItems()
+    }
+
+    // Загрузить купленные предметы пользователя
+    async function loadOwned() {
+      const { data } = await client
+        .from('owned_avatars')
+        .select('item_id')
+        .eq('user_id', currentUser.id)
+
+      ownedIds = data ? data.map(d => d.item_id) : []
+    }
+
+    // Переключение вкладок
+    async function switchTab(mode, category, btn) {
+      currentMode = mode
+
+      // Убрать active у всех кнопок
+      document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+
+      const titles = {
+        'buy-backgrounds': 'Купить — Фон профиля',
+        'inventory-backgrounds': 'Инвентарь — Фон профиля'
+      }
+      document.getElementById('shop-title').textContent = titles[mode + '-' + category]
+
+      if (mode === 'buy') {
+        await loadShopItems()
+      } else {
+        await loadInventory()
+      }
+    }
+
+    // Загрузить все товары из магазина
+    async function loadShopItems() {
+      const grid = document.getElementById('items-grid')
+      grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
+
+      const { data, error } = await client
+        .from('shop_items')
+        .select('*')
+
+      if (error || !data || data.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🛒</div>
+            <div class="empty-state-text">Товаров пока нет</div>
+          </div>`
+        return
+      }
+
+      grid.innerHTML = ''
+      data.forEach(item => {
+        const owned = ownedIds.includes(item.id)
+        grid.innerHTML += `
+          <div class="item-card">
+            ${item.image_url
+              ? `<img class="item-img" src="${item.image_url}" alt="${item.name}">`
+              : `<div class="item-img-placeholder">🖼️</div>`
+            }
+            <div class="item-info">
+              <div class="item-name">${item.name}</div>
+              <div class="item-price">
+                <span class="item-price-coin">🪙</span> ${item.price}
+              </div>
+              ${owned
+                ? `<button class="item-btn owned" disabled>✅ Куплено</button>`
+                : `<button class="item-btn buy" onclick="buyItem('${item.id}', ${item.price}, '${item.name}')">Купить</button>`
+              }
+            </div>
+          </div>`
+      })
+    }
+
+    // Загрузить инвентарь
+    async function loadInventory() {
+      const grid = document.getElementById('items-grid')
+      grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
+
+      if (ownedIds.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🎒</div>
+            <div class="empty-state-text">Инвентарь пуст — купи что-нибудь!</div>
+          </div>`
+        return
+      }
+
+      // Загружаем профиль чтобы знать активный фон
+      const { data: profile } = await client
+        .from('profiles')
+        .select('profile_bg')
+        .eq('id', currentUser.id)
+        .single()
+
+      const activeBg = profile?.profile_bg ?? null
+
+      const { data, error } = await client
+        .from('shop_items')
+        .select('*')
+        .in('id', ownedIds)
+
+      if (error || !data) {
+        grid.innerHTML = '<p style="color:#dc2626;padding:20px">Ошибка загрузки</p>'
+        return
+      }
+
+      grid.innerHTML = ''
+      data.forEach(item => {
+        const isEquipped = activeBg === item.id
+        grid.innerHTML += `
+          <div class="item-card">
+            ${item.image_url
+              ? `<img class="item-img" src="${item.image_url}" alt="${item.name}">`
+              : `<div class="item-img-placeholder">🖼️</div>`
+            }
+            <div class="item-info">
+              <div class="item-name">${item.name}</div>
+              ${isEquipped
+                ? `<button class="item-btn equipped" disabled>✨ Активно</button>`
+                : `<button class="item-btn equip" onclick="equipItem('${item.id}', '${item.name}')">Надеть</button>`
+              }
+            </div>
+          </div>`
+      })
+    }
+
+    // Купить предмет
+    async function buyItem(itemId, price, itemName) {
+      const { data: profile } = await client
+        .from('profiles')
+        .select('money')
+        .eq('id', currentUser.id)
+        .single()
+
+      if (profile.money < price) {
+        showToast('Недостаточно монет!', 'error')
+        return
+      }
+
+      // Списываем деньги
+      const { error: moneyError } = await client
+        .from('profiles')
+        .update({ money: profile.money - price })
+        .eq('id', currentUser.id)
+
+      if (moneyError) { showToast('Ошибка покупки', 'error'); return }
+
+      // Добавляем в инвентарь
+      const { error: ownError } = await client
+        .from('owned_avatars')
+        .insert({ user_id: currentUser.id, item_id: itemId })
+
+      if (ownError) { showToast('Ошибка покупки', 'error'); return }
+
+      document.getElementById('user-money').textContent = profile.money - price
+      ownedIds.push(itemId)
+      showToast(`✅ Куплено: ${itemName}`, 'success')
+      await loadShopItems()
+    }
+
+    // Надеть предмет
+    async function equipItem(itemId, itemName) {
+      const { error } = await client
+        .from('profiles')
+        .update({ profile_bg: itemId })
+        .eq('id', currentUser.id)
+
+      if (error) { showToast('Ошибка', 'error'); return }
+
+      showToast(`✨ Активировано: ${itemName}`, 'success')
+      await loadInventory()
+    }
+
+    // Уведомление
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast')
+      toast.textContent = msg
+      toast.className = `toast ${type} show`
+      setTimeout(() => toast.classList.remove('show'), 3000)
+    }
+
+    function toggleDropdown() {
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) {
+        profile.classList.remove('open')
+      }
+    })
+
+    async function logout() {
+      await client.auth.signOut()
+      window.location.href = 'index.html'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
