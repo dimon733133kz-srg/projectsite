@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лекции</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
+    </div>
+
+    <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+      <div class="profile-icon">
+        <img src="icons/profile-default.png" alt="Профиль">
+      </div>
+      <span class="profile-name" id="profile-name">Загрузка...</span>
+      <span class="profile-arrow">▼</span>
+
+      <div class="dropdown">
+        <a href="#">⚙️ Настройки</a>
+        <div class="divider"></div>
+        <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="lectures-layout">
+
+      <div class="lectures-sidebar">
+        <div class="lectures-sidebar-header">
+          Лекции
+          <a href="main.html">← Назад</a>
+        </div>
+        <div id="sections-list">
+          <div class="lecture-placeholder" style="padding: 30px; font-size: 13px; color: #94a3b8;">
+            Загрузка...
+          </div>
+        </div>
+      </div>
+
+      <div class="lecture-content" id="lecture-content">
+        <div class="lecture-placeholder">
+          <div class="lecture-placeholder-icon">📖</div>
+          <div class="lecture-placeholder-text">Выбери лекцию из меню слева</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    let activeLectureBtn = null
+
+    async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
+
+      const { data, error } = await client
+        .from('profiles')
+        .select('name, profile_bg')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !data) { window.location.href = 'index.html'; return }
+
+      document.getElementById('profile-name').textContent = data.name
+      if (data.profile_bg) await loadProfileBg(data.profile_bg)
+
+      await loadSections()
+    }
+
+    async function loadProfileBg(bgId) {
+      const { data: item } = await client
+        .from('shop_items')
+        .select('image_url')
+        .eq('id', bgId)
+        .single()
+
+      if (!item) return
+
+      const btn = document.getElementById('profile-btn')
+      btn.style.backgroundImage = `url('${item.image_url}')`
+      btn.classList.add('has-bg')
+    }
+
+    async function loadSections() {
+      const { data: sections, error } = await client
+        .from('sections')
+        .select('id, title, order')
+        .order('order', { ascending: true })
+
+      if (error || !sections || sections.length === 0) {
+        document.getElementById('sections-list').innerHTML =
+          '<div style="padding:20px;font-size:13px;color:#94a3b8;">Разделов пока нет</div>'
+        return
+      }
+
+      const { data: lectures } = await client
+        .from('lectures')
+        .select('id, title, section_id, order')
+        .order('order', { ascending: true })
+
+      const list = document.getElementById('sections-list')
+      list.innerHTML = ''
+
+      sections.forEach(section => {
+        const sectionLectures = lectures
+          ? lectures.filter(l => l.section_id === section.id)
+          : []
+
+        const sectionEl = document.createElement('div')
+        sectionEl.className = 'section-item'
+        sectionEl.innerHTML = `
+          <button class="section-toggle" onclick="toggleSection(this)">
+            ${section.title}
+            <span class="section-arrow">▼</span>
+          </button>
+          <div class="section-lectures">
+            ${sectionLectures.length === 0
+              ? '<div style="padding:10px 20px 10px 36px;font-size:13px;color:#94a3b8;">Лекций пока нет</div>'
+              : sectionLectures.map(l => `
+                <button class="lecture-btn" onclick="loadLecture('${l.id}', this)">
+                  ${l.title}
+                </button>`).join('')
+            }
+          </div>`
+        list.appendChild(sectionEl)
+      })
+    }
+
+    function toggleSection(btn) {
+      btn.classList.toggle('open')
+      const lecturesList = btn.nextElementSibling
+      lecturesList.classList.toggle('open')
+    }
+
+    async function loadLecture(lectureId, btn) {
+      if (activeLectureBtn) activeLectureBtn.classList.remove('active')
+      activeLectureBtn = btn
+      btn.classList.add('active')
+
+      const content = document.getElementById('lecture-content')
+      content.innerHTML = '<div class="lecture-placeholder"><div class="lecture-placeholder-text">Загрузка...</div></div>'
+
+      const { data: lecture, error } = await client
+        .from('lectures')
+        .select('file_url, title')
+        .eq('id', lectureId)
+        .single()
+
+      if (error || !lecture) {
+        content.innerHTML = '<div class="lecture-placeholder"><div class="lecture-placeholder-text">Ошибка загрузки</div></div>'
+        return
+      }
+
+      try {
+        const response = await fetch(lecture.file_url)
+        const json = await response.json()
+        renderLecture(json)
+      } catch (e) {
+        content.innerHTML = '<div class="lecture-placeholder"><div class="lecture-placeholder-text">Ошибка чтения файла</div></div>'
+      }
+    }
+
+    function renderLecture(data) {
+      const content = document.getElementById('lecture-content')
+
+      let blocksHtml = ''
+      data.content.forEach(block => {
+        if (block.type === 'heading') {
+          blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`
+        } else if (block.type === 'paragraph') {
+          blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`
+        } else if (block.type === 'code') {
+          blocksHtml += `<pre class="lecture-block-code">${block.text}</pre>`
+        } else if (block.type === 'image') {
+          blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="${block.alt || ''}">`
+        }
+      })
+
+      let questionsHtml = ''
+      if (data.questions && data.questions.length > 0) {
+        questionsHtml = `
+          <div class="questions-section">
+            <div class="questions-title">Вопросы по теме</div>
+            ${data.questions.map((q, qi) => `
+              <div class="question-card">
+                <div class="question-text">${qi + 1}. ${q.question}</div>
+                <div class="question-options">
+                  ${q.options.map((opt, oi) => `
+                    <button class="option-btn" onclick="checkAnswer(this, ${oi}, ${q.answer}, ${qi})">
+                      ${opt}
+                    </button>`).join('')}
+                </div>
+              </div>`).join('')}
+          </div>`
+      }
+
+      content.innerHTML = `
+        <div class="lecture-body">
+          <h1>${data.title}</h1>
+          ${data.description ? `<div class="lecture-description">${data.description}</div>` : ''}
+          ${blocksHtml}
+        </div>
+        ${questionsHtml}`
+    }
+
+    function checkAnswer(btn, selected, correct, questionIndex) {
+      const options = btn.parentElement.querySelectorAll('.option-btn')
+      options.forEach(b => b.disabled = true)
+
+      if (selected === correct) {
+        btn.classList.add('correct')
+      } else {
+        btn.classList.add('wrong')
+        options[correct].classList.add('correct')
+      }
+    }
+
+    function toggleDropdown(e) {
+      e.stopPropagation()
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+    })
+
+    async function logout() {
+      await client.auth.signOut()
+      window.location.href = 'index.html'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
