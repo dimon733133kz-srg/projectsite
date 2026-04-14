@@ -16,7 +16,7 @@
 </a>
     </div>
 
-    <div class="profile" id="profile-btn" onclick="toggleDropdown()">
+    <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
       <div class="profile-icon">
         <img src="icons/profile-default.png" alt="Профиль">
       </div>
@@ -132,14 +132,18 @@
       btn.classList.add('has-bg')
     }
 
-    function toggleDropdown() {
-      document.getElementById('profile-btn').classList.toggle('open')
-    }
+    function toggleDropdown(e) {
+  e.stopPropagation()
+  document.getElementById('profile-btn').classList.toggle('open')
+}
 
     document.addEventListener('click', function(e) {
-      const profile = document.getElementById('profile-btn')
-      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
-    })
+  const profile = document.getElementById('profile-btn')
+  if (!profile) return
+  if (!profile.contains(e.target)) {
+    profile.classList.remove('open')
+  }
+})
 
     async function logout() {
       await client.auth.signOut()
