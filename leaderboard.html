@@ -7,162 +7,221 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
 
-<header>
-  <div class="logo">
-    <a href="main.html">
-      <img src="logo.png">
-    </a>
-  </div>
-
-  <div class="profile" id="profile-btn"></div>
-</header>
-
-<main>
-  <div class="leaderboard-layout">
-
-    <div class="leaderboard-sidebar">
-      <button class="lb-btn active" onclick="setMode('all', this)">Общий</button>
-      <button class="lb-btn" onclick="setMode('groups', this)">Лучшие из групп</button>
-      <button class="lb-btn" onclick="setMode('my', this)">Своя группа</button>
+  <header>
+    <div class="logo">
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
     </div>
 
-    <div class="leaderboard-content">
-
-      <div class="lb-top-filters">
-        <button class="lb-sort-btn active" onclick="setSort('streak', this)">Серия побед</button>
-        <button class="lb-sort-btn" onclick="setSort('wins', this)">Всего побед</button>
+    <div class="header-right">
+      <div class="stat-badge wins">
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
+      </div>
+      <div class="stat-badge streak">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
       </div>
 
-      <div id="leaders-list"></div>
+      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+        <div class="profile-icon">
+          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        </div>
+        <span class="profile-name" id="profile-name">Загрузка...</span>
+        <span class="profile-arrow">▼</span>
+
+        <div class="dropdown">
+          <a href="#">⚙️ Настройки</a>
+          <div class="divider"></div>
+          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="leaderboard-layout">
+
+      <div class="leaderboard-sidebar">
+        <a href="main.html" class="back-btn" style="margin: 12px 10px 4px;">← Назад</a>
+        <button class="lb-btn active" onclick="setMode('all', this)">🌐 Общий</button>
+        <button class="lb-btn" onclick="setMode('groups', this)">🏫 Лучшие из групп</button>
+        <button class="lb-btn" onclick="setMode('my', this)">👥 Своя группа</button>
+      </div>
+
+      <div class="leaderboard-content">
+
+        <div class="lb-top-filters">
+          <button class="lb-sort-btn active" onclick="setSort('streak', this)">🔥 Серия побед</button>
+          <button class="lb-sort-btn" onclick="setSort('wins', this)">🏆 Всего побед</button>
+        </div>
+
+        <div id="leaders-list"></div>
+
+      </div>
 
     </div>
+  </main>
 
-  </div>
-</main>
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
 
-<script>
+  <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
-const { createClient } = supabase
-const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-let allUsers = []
-let currentUser = null
-let mode = 'all'
-let sortType = 'streak'
+    let allUsers = []
+    let currentUser = null
+    let mode = 'all'
+    let sortType = 'streak'
 
-async function init() {
-  const { data: { session } } = await client.auth.getSession()
-  if (!session) return
+    async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
 
-  const { data: me } = await client
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single()
+      const { data: me } = await client
+        .from('profiles')
+        .select('name, group, profile_bg, profile_avatar, wins, win_streak')
+        .eq('id', session.user.id)
+        .single()
 
-  currentUser = me
+      currentUser = me
 
-  const { data } = await client
-    .from('profiles')
-    .select('name, "group", money, profile_bg, profile_avatar, wins, win_streak')
+      document.getElementById('profile-name').textContent = me.name
+      document.getElementById('wins-count').textContent = me.wins ?? 0
+      document.getElementById('streak-count').textContent = me.win_streak ?? 0
 
-  allUsers = data || []
-
-  render()
-}
-
-function setMode(m, btn) {
-  mode = m
-  document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
-  btn.classList.add('active')
-  render()
-}
-
-function setSort(s, btn) {
-  sortType = s
-  document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
-  btn.classList.add('active')
-  render()
-}
-
-function render() {
-  let users = [...allUsers]
-
-  if (mode === 'groups') {
-    const best = {}
-
-    users.forEach(u => {
-      if (!best[u.group]) best[u.group] = u
-      else {
-        if (sortType === 'streak') {
-          if (u.win_streak > best[u.group].win_streak) best[u.group] = u
-        } else {
-          if (u.wins > best[u.group].wins) best[u.group] = u
-        }
+      if (me.profile_avatar) {
+        document.getElementById('profile-avatar-img').src = me.profile_avatar
       }
+
+      if (me.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${me.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
+
+      const { data } = await client
+        .from('profiles')
+        .select('name, group, profile_bg, profile_avatar, wins, win_streak')
+
+      allUsers = data || []
+      render()
+    }
+
+    function setMode(m, btn) {
+      mode = m
+      document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      render()
+    }
+
+    function setSort(s, btn) {
+      sortType = s
+      document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      render()
+    }
+
+    function render() {
+      let users = [...allUsers]
+
+      if (mode === 'groups') {
+        const best = {}
+        users.forEach(u => {
+          if (!best[u.group]) {
+            best[u.group] = u
+          } else {
+            const val = sortType === 'streak' ? 'win_streak' : 'wins'
+            if (u[val] > best[u.group][val]) best[u.group] = u
+          }
+        })
+        users = Object.values(best)
+      }
+
+      if (mode === 'my' && currentUser) {
+        users = users.filter(u => u.group === currentUser.group)
+      }
+
+      users.sort((a, b) => sortType === 'streak'
+        ? b.win_streak - a.win_streak
+        : b.wins - a.wins)
+
+      const container = document.getElementById('leaders-list')
+      container.innerHTML = ''
+
+      if (users.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><div class="empty-state-text">Пока никого нет</div></div>'
+        return
+      }
+
+      users.forEach((u, index) => {
+        const isMe = currentUser && u.name === currentUser.name && u.group === currentUser.group
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`
+
+        const el = document.createElement('div')
+        el.className = 'leader-card' + (isMe ? ' leader-card-me' : '')
+
+        if (u.profile_bg) {
+          el.style.backgroundImage = `url('${u.profile_bg}')`
+        }
+
+        el.innerHTML = `
+          <div class="leader-inner">
+            <div class="leader-left">
+              <div class="leader-rank">${medal}</div>
+              <div class="leader-avatar">
+                <img src="${u.profile_avatar || 'icons/profile-default.png'}" alt="${u.name}">
+              </div>
+              <div class="leader-text">
+                <div class="leader-name">${u.name}</div>
+                <div class="leader-group">${u.group}</div>
+              </div>
+            </div>
+            <div class="leader-stats">
+              <div class="stat-badge streak">
+                <img src="icons/streak.png" alt="Стрик">
+                <span>${u.win_streak ?? 0}</span>
+              </div>
+              <div class="stat-badge wins">
+                <img src="icons/wins.png" alt="Победы">
+                <span>${u.wins ?? 0}</span>
+              </div>
+            </div>
+          </div>`
+
+        container.appendChild(el)
+      })
+    }
+
+    function toggleDropdown(e) {
+      e.stopPropagation()
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
     })
 
-    users = Object.values(best)
-  }
+    async function logout() {
+      await client.auth.signOut()
+      window.location.href = 'index.html'
+    }
 
-  if (mode === 'my' && currentUser) {
-    users = users.filter(u => u.group === currentUser.group)
-  }
-
-  users.sort((a, b) => {
-    return sortType === 'streak'
-      ? b.win_streak - a.win_streak
-      : b.wins - a.wins
-  })
-
-  const container = document.getElementById('leaders-list')
-  container.innerHTML = ''
-
-  users.forEach(u => {
-    const el = document.createElement('div')
-    el.className = 'leader-card'
-    el.style.backgroundImage = `url('${u.profile_bg}')`
-
-    el.innerHTML = `
-  <div class="leader-inner">
-
-    <div class="leader-left">
-      <div class="leader-avatar">
-        <img src="${u.profile_avatar}">
-      </div>
-
-      <div class="leader-text">
-        <div class="leader-name">${u.name}</div>
-        <div class="leader-group">${u.group}</div>
-      </div>
-    </div>
-
-    <div class="leader-stats">
-      <div class="stat-badge streak">
-        <img src="icons/streak.png">
-        <span>${u.win_streak}</span>
-      </div>
-      <div class="stat-badge wins">
-        <img src="icons/wins.png">
-        <span>${u.wins}</span>
-      </div>
-    </div>
-
-  </div>
-`
-
-
-    container.appendChild(el)
-  })
-}
-
-init()
-</script>
+    init()
+  </script>
 
 </body>
 </html>
