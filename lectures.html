@@ -16,17 +16,28 @@
       </a>
     </div>
 
-    <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
-      <div class="profile-icon">
-        <img src="icons/profile-default.png" alt="Профиль">
+    <div class="header-right">
+      <div class="stat-badge wins">
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
       </div>
-      <span class="profile-name" id="profile-name">Загрузка...</span>
-      <span class="profile-arrow">▼</span>
+      <div class="stat-badge streak">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
 
-      <div class="dropdown">
-        <a href="#">⚙️ Настройки</a>
-        <div class="divider"></div>
-        <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+        <div class="profile-icon">
+          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        </div>
+        <span class="profile-name" id="profile-name">Загрузка...</span>
+        <span class="profile-arrow">▼</span>
+
+        <div class="dropdown">
+          <a href="#">⚙️ Настройки</a>
+          <div class="divider"></div>
+          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+        </div>
       </div>
     </div>
   </header>
@@ -68,6 +79,7 @@
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
+
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -79,30 +91,27 @@
 
       const { data, error } = await client
         .from('profiles')
-        .select('name, profile_bg')
+        .select('name, profile_bg, profile_avatar, wins, win_streak')
         .eq('id', session.user.id)
         .single()
 
       if (error || !data) { window.location.href = 'index.html'; return }
 
       document.getElementById('profile-name').textContent = data.name
-      if (data.profile_bg) await loadProfileBg(data.profile_bg)
+      document.getElementById('wins-count').textContent = data.wins ?? 0
+      document.getElementById('streak-count').textContent = data.win_streak ?? 0
+
+      if (data.profile_avatar) {
+        document.getElementById('profile-avatar-img').src = data.profile_avatar
+      }
+
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
 
       await loadSections()
-    }
-
-    async function loadProfileBg(bgId) {
-      const { data: item } = await client
-        .from('shop_items')
-        .select('image_url')
-        .eq('id', bgId)
-        .single()
-
-      if (!item) return
-
-      const btn = document.getElementById('profile-btn')
-      btn.style.backgroundImage = `url('${item.image_url}')`
-      btn.classList.add('has-bg')
     }
 
     async function loadSections() {
@@ -126,9 +135,7 @@
       list.innerHTML = ''
 
       sections.forEach(section => {
-        const sectionLectures = lectures
-          ? lectures.filter(l => l.section_id === section.id)
-          : []
+        const sectionLectures = lectures ? lectures.filter(l => l.section_id === section.id) : []
 
         const sectionEl = document.createElement('div')
         sectionEl.className = 'section-item'
@@ -143,8 +150,7 @@
               : sectionLectures.map(l => `
                 <button class="lecture-btn" onclick="loadLecture('${l.id}', this)">
                   ${l.title}
-                </button>`).join('')
-            }
+                </button>`).join('')}
           </div>`
         list.appendChild(sectionEl)
       })
@@ -152,8 +158,7 @@
 
     function toggleSection(btn) {
       btn.classList.toggle('open')
-      const lecturesList = btn.nextElementSibling
-      lecturesList.classList.toggle('open')
+      btn.nextElementSibling.classList.toggle('open')
     }
 
     async function loadLecture(lectureId, btn) {
@@ -210,7 +215,7 @@
                 <div class="question-text">${qi + 1}. ${q.question}</div>
                 <div class="question-options">
                   ${q.options.map((opt, oi) => `
-                    <button class="option-btn" onclick="checkAnswer(this, ${oi}, ${q.answer}, ${qi})">
+                    <button class="option-btn" onclick="checkAnswer(this, ${oi}, ${q.answer})">
                       ${opt}
                     </button>`).join('')}
                 </div>
@@ -227,10 +232,9 @@
         ${questionsHtml}`
     }
 
-    function checkAnswer(btn, selected, correct, questionIndex) {
+    function checkAnswer(btn, selected, correct) {
       const options = btn.parentElement.querySelectorAll('.option-btn')
       options.forEach(b => b.disabled = true)
-
       if (selected === correct) {
         btn.classList.add('correct')
       } else {

@@ -11,22 +11,33 @@
 
   <header>
     <div class="logo">
-      <a href="" target="_blank">
-  <img src="logo.png" alt="Логотип">
-</a>
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
     </div>
 
-    <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
-      <div class="profile-icon">
-        <img src="icons/profile-default.png" alt="Профиль">
+    <div class="header-right">
+      <div class="stat-badge wins">
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
       </div>
-      <span class="profile-name" id="profile-name">Загрузка...</span>
-      <span class="profile-arrow">▼</span>
+      <div class="stat-badge streak">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
 
-      <div class="dropdown">
-        <a href="#">⚙️ Настройки</a>
-        <div class="divider"></div>
-        <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+        <div class="profile-icon">
+          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        </div>
+        <span class="profile-name" id="profile-name">Загрузка...</span>
+        <span class="profile-arrow">▼</span>
+
+        <div class="dropdown">
+          <a href="#">⚙️ Настройки</a>
+          <div class="divider"></div>
+          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+        </div>
       </div>
     </div>
   </header>
@@ -35,49 +46,37 @@
     <div class="cards-grid">
 
       <a class="card" href="lectures.html">
-        <div class="card-icon">
-          <img src="icons/lectures.png" alt="Лекции">
-        </div>
+        <div class="card-icon"><img src="icons/lectures.png" alt="Лекции"></div>
         <div class="card-title">Лекции</div>
         <div class="card-desc">Учебные материалы по Python</div>
       </a>
 
       <a class="card" href="quiz.html">
-        <div class="card-icon">
-          <img src="icons/quiz.png" alt="Викторины">
-        </div>
+        <div class="card-icon"><img src="icons/quiz.png" alt="Викторины"></div>
         <div class="card-title">Викторины</div>
         <div class="card-desc">Проверь свои знания</div>
       </a>
 
       <a class="card" href="games.html">
-        <div class="card-icon">
-          <img src="icons/games.png" alt="Игры">
-        </div>
+        <div class="card-icon"><img src="icons/games.png" alt="Игры"></div>
         <div class="card-title">Игры</div>
         <div class="card-desc">Обучение в игровом формате</div>
       </a>
 
       <a class="card" href="shop.html">
-        <div class="card-icon">
-          <img src="icons/shop.png" alt="Магазин">
-        </div>
+        <div class="card-icon"><img src="icons/shop.png" alt="Магазин"></div>
         <div class="card-title">Магазин</div>
         <div class="card-desc">Трать заработанные очки</div>
       </a>
 
       <a class="card" href="leaderboard.html">
-        <div class="card-icon">
-          <img src="icons/leaderboard.png" alt="Лидеры">
-        </div>
+        <div class="card-icon"><img src="icons/leaderboard.png" alt="Лидеры"></div>
         <div class="card-title">Лидеры</div>
         <div class="card-desc">Таблица лучших студентов</div>
       </a>
 
       <a class="card" href="group.html">
-        <div class="card-icon">
-          <img src="icons/group.png" alt="Группа">
-        </div>
+        <div class="card-icon"><img src="icons/group.png" alt="Группа"></div>
         <div class="card-title">Группа</div>
         <div class="card-desc">Участники твоей группы</div>
       </a>
@@ -97,7 +96,6 @@
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
-
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -107,43 +105,36 @@
 
       const { data, error } = await client
         .from('profiles')
-        .select('name, profile_bg')
+        .select('name, profile_bg, profile_avatar, wins, win_streak')
         .eq('id', session.user.id)
         .single()
 
       if (error || !data) { window.location.href = 'index.html'; return }
 
       document.getElementById('profile-name').textContent = data.name
+      document.getElementById('wins-count').textContent = data.wins ?? 0
+      document.getElementById('streak-count').textContent = data.win_streak ?? 0
 
-      if (data.profile_bg) await loadProfileBg(data.profile_bg)
-    }
+      if (data.profile_avatar) {
+        document.getElementById('profile-avatar-img').src = data.profile_avatar
+      }
 
-    async function loadProfileBg(bgId) {
-      const { data: item } = await client
-        .from('shop_items')
-        .select('image_url')
-        .eq('id', bgId)
-        .single()
-
-      if (!item) return
-
-      const btn = document.getElementById('profile-btn')
-      btn.style.backgroundImage = `url('${item.image_url}')`
-      btn.classList.add('has-bg')
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
     }
 
     function toggleDropdown(e) {
-  e.stopPropagation()
-  document.getElementById('profile-btn').classList.toggle('open')
-}
+      e.stopPropagation()
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
 
     document.addEventListener('click', function(e) {
-  const profile = document.getElementById('profile-btn')
-  if (!profile) return
-  if (!profile.contains(e.target)) {
-    profile.classList.remove('open')
-  }
-})
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+    })
 
     async function logout() {
       await client.auth.signOut()

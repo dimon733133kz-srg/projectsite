@@ -11,11 +11,7 @@
   --text-muted: rgba(255,255,255,0.65);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   min-height: 100vh;
@@ -37,16 +33,8 @@ header {
   flex-shrink: 0;
 }
 
-.logo a {
-  display: block;
-  height: 60px;
-}
-
-.logo img {
-  height: 100%;
-  width: auto;
-  object-fit: contain;
-}
+.logo a { display: block; height: 60px; }
+.logo img { height: 100%; width: auto; object-fit: contain; }
 
 .logo-placeholder {
   height: 60px;
@@ -59,6 +47,36 @@ header {
   text-decoration: none;
 }
 
+/* Правая часть шапки */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Бейджи побед и стрика */
+.stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 6px 12px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stat-badge img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.stat-badge.wins { border: 1.5px solid rgba(52,211,153,0.4); }
+.stat-badge.streak { border: 1.5px solid rgba(250,204,21,0.4); }
+
+/* Профиль */
 .profile {
   position: relative;
   display: flex;
@@ -73,7 +91,7 @@ header {
   min-width: 150px;
   background-size: cover;
   background-position: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .profile::before {
@@ -110,18 +128,8 @@ header {
   border-radius: 50%;
 }
 
-.profile-name {
-  font-size: 15px;
-  font-weight: 600;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-
-.profile-arrow {
-  font-size: 10px;
-  opacity: 0.85;
-  transition: transform 0.2s;
-}
-
+.profile-name { font-size: 15px; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+.profile-arrow { font-size: 10px; opacity: 0.85; transition: transform 0.2s; }
 .profile.open .profile-arrow { transform: rotate(180deg); }
 
 .dropdown {
@@ -181,7 +189,7 @@ main {
   align-items: stretch;
 }
 
-/* ========== ФОРМА АВТОРИЗАЦИИ ========== */
+/* ========== АВТОРИЗАЦИЯ ========== */
 .auth-wrapper {
   flex: 1;
   display: flex;
@@ -253,15 +261,13 @@ main {
 
 .auth-box button:hover { opacity: 0.92; }
 .auth-box button:active { transform: scale(0.98); }
-
 .auth-box .switch-link { text-align: center; margin-top: 18px; font-size: 13px; color: #666; }
 .auth-box .switch-link a { color: var(--purple); font-weight: 600; text-decoration: none; }
 .auth-box .switch-link a:hover { text-decoration: underline; }
-
 .auth-message { margin-top: 12px; font-size: 13px; text-align: center; color: #dc2626; min-height: 18px; }
 .auth-message.success { color: #059669; }
 
-/* ========== ГЛАВНАЯ СТРАНИЦА ========== */
+/* ========== ГЛАВНАЯ ========== */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -288,12 +294,7 @@ main {
   box-shadow: 0 4px 16px rgba(30,58,138,0.2);
 }
 
-.card:hover {
-  background: linear-gradient(135deg, #2a4fba, #9333ea);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 28px rgba(30,58,138,0.3);
-}
-
+.card:hover { background: linear-gradient(135deg, #2a4fba, #9333ea); transform: translateY(-3px); box-shadow: 0 10px 28px rgba(30,58,138,0.3); }
 .card:active { transform: scale(0.98); }
 
 .card-icon {
@@ -313,14 +314,7 @@ main {
 .card-icon img { width: 44px; height: 44px; object-fit: contain; }
 .card-icon span { font-size: 36px; }
 
-.card-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  transition: transform 0.3s ease;
-  color: white;
-}
-
+.card-title { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; transition: transform 0.3s ease; color: white; }
 .card:hover .card-title { transform: translateY(-8px); }
 
 .card-desc {
@@ -440,16 +434,8 @@ main {
   overflow-y: auto;
 }
 
-.shop-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
+.shop-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 .shop-header-left { display: flex; align-items: center; gap: 12px; }
-
 .shop-title { font-size: 20px; font-weight: 700; color: var(--navy); }
 
 .back-btn {
@@ -484,11 +470,7 @@ main {
 
 .money-badge span { color: #ca8a04; font-size: 16px; }
 
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-}
+.items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
 
 .item-card {
   background: var(--bg);
@@ -501,7 +483,6 @@ main {
 }
 
 .item-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(30,58,138,0.12); border-color: var(--purple-light); }
-
 .item-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
 
 .item-img-placeholder {
@@ -546,8 +527,7 @@ main {
 
 .toast {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
+  bottom: 30px; right: 30px;
   background: var(--navy);
   color: white;
   padding: 14px 22px;
@@ -634,22 +614,11 @@ main {
 }
 
 .section-toggle:hover { background: #ede9fe; }
-
 .section-toggle.open { color: var(--purple); }
-
-.section-arrow {
-  font-size: 10px;
-  transition: transform 0.2s;
-  color: #94a3b8;
-}
-
+.section-arrow { font-size: 10px; transition: transform 0.2s; color: #94a3b8; }
 .section-toggle.open .section-arrow { transform: rotate(180deg); }
 
-.section-lectures {
-  display: none;
-  flex-direction: column;
-}
-
+.section-lectures { display: none; flex-direction: column; }
 .section-lectures.open { display: flex; }
 
 .lecture-btn {
@@ -666,21 +635,9 @@ main {
 }
 
 .lecture-btn:hover { background: #f5f3ff; color: var(--purple); }
+.lecture-btn.active { background: #ede9fe; color: var(--purple); font-weight: 600; border-left-color: var(--purple); }
 
-.lecture-btn.active {
-  background: #ede9fe;
-  color: var(--purple);
-  font-weight: 600;
-  border-left-color: var(--purple);
-}
-
-/* Правая часть — контент лекции */
-.lecture-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
+.lecture-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
 
 .lecture-placeholder {
   flex: 1;
@@ -696,38 +653,11 @@ main {
 .lecture-placeholder-icon { font-size: 56px; }
 .lecture-placeholder-text { font-size: 16px; }
 
-.lecture-body {
-  padding: 36px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.lecture-body h1 {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--navy);
-  margin-bottom: 4px;
-}
-
-.lecture-body .lecture-description {
-  font-size: 15px;
-  color: #64748b;
-  margin-bottom: 8px;
-}
-
-.lecture-block-heading {
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--navy);
-  margin-top: 10px;
-}
-
-.lecture-block-paragraph {
-  font-size: 15px;
-  line-height: 1.75;
-  color: #334155;
-}
+.lecture-body { padding: 36px 40px; display: flex; flex-direction: column; gap: 18px; }
+.lecture-body h1 { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+.lecture-body .lecture-description { font-size: 15px; color: #64748b; margin-bottom: 8px; }
+.lecture-block-heading { font-size: 19px; font-weight: 700; color: var(--navy); margin-top: 10px; }
+.lecture-block-paragraph { font-size: 15px; line-height: 1.75; color: #334155; }
 
 .lecture-block-code {
   background: #1e293b;
@@ -741,48 +671,14 @@ main {
   white-space: pre;
 }
 
-.lecture-block-image {
-  width: 100%;
-  border-radius: 10px;
-  object-fit: contain;
-  max-height: 400px;
-}
+.lecture-block-image { width: 100%; border-radius: 10px; object-fit: contain; max-height: 400px; }
 
-/* Вопросы */
-.questions-section {
-  padding: 0 40px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
+.questions-section { padding: 0 40px 40px; display: flex; flex-direction: column; gap: 20px; }
+.questions-title { font-size: 20px; font-weight: 700; color: var(--navy); padding-top: 10px; border-top: 2px solid #ede9fe; }
 
-.questions-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--navy);
-  padding-top: 10px;
-  border-top: 2px solid #ede9fe;
-}
-
-.question-card {
-  background: var(--bg);
-  border-radius: 12px;
-  padding: 20px;
-  border: 1.5px solid #e2e8f0;
-}
-
-.question-text {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 14px;
-}
-
-.question-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.question-card { background: var(--bg); border-radius: 12px; padding: 20px; border: 1.5px solid #e2e8f0; }
+.question-text { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
+.question-options { display: flex; flex-direction: column; gap: 8px; }
 
 .option-btn {
   padding: 10px 16px;
@@ -804,8 +700,8 @@ main {
 /* ========== АДАПТИВ ========== */
 @media (max-width: 700px) {
   header { padding: 0 16px; height: 68px; }
+  .stat-badge span { display: none; }
   .auth-box { padding: 28px 20px; }
-
   main { padding: 16px 0; overflow: hidden; }
 
   .cards-grid {
@@ -821,19 +717,15 @@ main {
   }
 
   .cards-grid::-webkit-scrollbar { display: none; }
-
   .card { min-width: 75vw; min-height: 220px; scroll-snap-align: center; flex-shrink: 0; }
   .card-desc { opacity: 1; transform: translateY(0); position: static; margin-top: 8px; }
   .card-title { transform: none !important; }
   .card:hover .card-title { transform: none; }
-
   footer .credits { flex-direction: column; gap: 4px; }
-
   .shop-layout { flex-direction: column; border-radius: 0; }
   .shop-modes { flex-direction: row; width: 100%; padding: 8px; }
   .shop-categories { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid #ede9fe; padding: 8px; }
   .shop-content { padding: 16px; }
-
   .lectures-layout { flex-direction: column; border-radius: 0; min-height: unset; }
   .lectures-sidebar { width: 100%; max-height: 260px; border-right: none; border-bottom: 1px solid #ede9fe; }
   .lecture-body { padding: 20px; }
