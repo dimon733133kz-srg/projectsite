@@ -47,14 +47,12 @@ header {
   text-decoration: none;
 }
 
-/* Правая часть шапки */
 .header-right {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-/* Бейджи побед и стрика */
 .stat-badge {
   display: flex;
   align-items: center;
@@ -76,7 +74,6 @@ header {
 .stat-badge.wins { border: 1.5px solid rgba(52,211,153,0.4); }
 .stat-badge.streak { border: 1.5px solid rgba(250,204,21,0.4); }
 
-/* Профиль */
 .profile {
   position: relative;
   display: flex;
@@ -91,7 +88,7 @@ header {
   min-width: 150px;
   background-size: cover;
   background-position: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .profile::before {
