@@ -129,26 +129,33 @@ function render() {
     el.style.backgroundImage = `url('${u.profile_bg}')`
 
     el.innerHTML = `
-      <div class="leader-content">
-        <div class="leader-name">${u.name}</div>
-        <div class="leader-group">${u.group}</div>
-      </div>
+  <div class="leader-inner">
 
+    <div class="leader-left">
       <div class="leader-avatar">
         <img src="${u.profile_avatar}">
       </div>
 
-      <div class="leader-stats">
-        <div class="stat-badge streak">
-          <img src="icons/streak.png">
-          <span>${u.win_streak}</span>
-        </div>
-        <div class="stat-badge wins">
-          <img src="icons/wins.png">
-          <span>${u.wins}</span>
-        </div>
+      <div class="leader-text">
+        <div class="leader-name">${u.name}</div>
+        <div class="leader-group">${u.group}</div>
       </div>
-    `
+    </div>
+
+    <div class="leader-stats">
+      <div class="stat-badge streak">
+        <img src="icons/streak.png">
+        <span>${u.win_streak}</span>
+      </div>
+      <div class="stat-badge wins">
+        <img src="icons/wins.png">
+        <span>${u.wins}</span>
+      </div>
+    </div>
+
+  </div>
+`
+
 
     container.appendChild(el)
   })
