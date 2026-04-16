@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Лидеры</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">
+    <a href="main.html">
+      <img src="logo.png">
+    </a>
+  </div>
+
+  <div class="profile" id="profile-btn"></div>
+</header>
+
+<main>
+  <div class="leaderboard-layout">
+
+    <div class="leaderboard-sidebar">
+      <button class="lb-btn active" onclick="setMode('all', this)">Общий</button>
+      <button class="lb-btn" onclick="setMode('groups', this)">Лучшие из групп</button>
+      <button class="lb-btn" onclick="setMode('my', this)">Своя группа</button>
+    </div>
+
+    <div class="leaderboard-content">
+
+      <div class="lb-top-filters">
+        <button class="lb-sort-btn active" onclick="setSort('streak', this)">Серия побед</button>
+        <button class="lb-sort-btn" onclick="setSort('wins', this)">Всего побед</button>
+      </div>
+
+      <div id="leaders-list"></div>
+
+    </div>
+
+  </div>
+</main>
+
+<script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+const { createClient } = supabase
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+let allUsers = []
+let currentUser = null
+let mode = 'all'
+let sortType = 'streak'
+
+async function init() {
+  const { data: { session } } = await client.auth.getSession()
+  if (!session) return
+
+  const { data: me } = await client
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
+
+  currentUser = me
+
+  const { data } = await client
+    .from('profiles')
+    .select('name, "group", money, profile_bg, profile_avatar, wins, win_streak')
+
+  allUsers = data || []
+
+  render()
+}
+
+function setMode(m, btn) {
+  mode = m
+  document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  render()
+}
+
+function setSort(s, btn) {
+  sortType = s
+  document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  render()
+}
+
+function render() {
+  let users = [...allUsers]
+
+  if (mode === 'groups') {
+    const best = {}
+
+    users.forEach(u => {
+      if (!best[u.group]) best[u.group] = u
+      else {
+        if (sortType === 'streak') {
+          if (u.win_streak > best[u.group].win_streak) best[u.group] = u
+        } else {
+          if (u.wins > best[u.group].wins) best[u.group] = u
+        }
+      }
+    })
+
+    users = Object.values(best)
+  }
+
+  if (mode === 'my' && currentUser) {
+    users = users.filter(u => u.group === currentUser.group)
+  }
+
+  users.sort((a, b) => {
+    return sortType === 'streak'
+      ? b.win_streak - a.win_streak
+      : b.wins - a.wins
+  })
+
+  const container = document.getElementById('leaders-list')
+  container.innerHTML = ''
+
+  users.forEach(u => {
+    const el = document.createElement('div')
+    el.className = 'leader-card'
+    el.style.backgroundImage = `url('${u.profile_bg}')`
+
+    el.innerHTML = `
+      <div class="leader-content">
+        <div class="leader-name">${u.name}</div>
+        <div class="leader-group">${u.group}</div>
+      </div>
+
+      <div class="leader-avatar">
+        <img src="${u.profile_avatar}">
+      </div>
+
+      <div class="leader-stats">
+        <div class="stat-badge streak">
+          <img src="icons/streak.png">
+          <span>${u.win_streak}</span>
+        </div>
+        <div class="stat-badge wins">
+          <img src="icons/wins.png">
+          <span>${u.wins}</span>
+        </div>
+      </div>
+    `
+
+    container.appendChild(el)
+  })
+}
+
+init()
+</script>
+
+</body>
+</html>
