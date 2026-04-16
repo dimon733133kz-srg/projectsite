@@ -91,7 +91,7 @@ header {
   min-width: 150px;
   background-size: cover;
   background-position: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 /* залупа блят */
