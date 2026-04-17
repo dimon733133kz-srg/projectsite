@@ -75,27 +75,169 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
+  <div class="quiz-overlay" id="quiz-overlay">
+    <div class="quiz-box" id="quiz-box">
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
-
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     let activeLectureBtn = null
+    let currentUserId = null
+    let currentMoney = 0
+
+    let quizQuestions = []
+    let quizOrder = []
+    let quizIndex = 0
+    let quizCorrect = 0
+    let quizWrong = 0
+    let quizSkipped = 0
+    let quizTimer = null
+
+    function shuffle(arr) {
+      const a = [...arr]
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]]
+      }
+      return a
+    }
+
+    function startQuiz(questions) {
+      quizQuestions = questions
+      quizOrder = shuffle(questions.map((_, i) => i))
+      quizIndex = 0
+      quizCorrect = 0
+      quizWrong = 0
+      quizSkipped = 0
+      document.getElementById('quiz-overlay').classList.add('active')
+      showQuestion()
+    }
+
+    function showQuestion() {
+      if (quizIndex >= quizOrder.length) {
+        showResults()
+        return
+      }
+
+      clearInterval(quizTimer)
+
+      const q = quizQuestions[quizOrder[quizIndex]]
+      const total = quizOrder.length
+      const current = quizIndex + 1
+      let timeLeft = 30
+
+      const shuffledOptions = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
+
+      document.getElementById('quiz-box').innerHTML = `
+        <div class="quiz-top">
+          <div class="quiz-counter">Вопрос ${current} из ${total}</div>
+          <div class="quiz-timer" id="quiz-timer">⏱ ${timeLeft}с</div>
+        </div>
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" style="width: ${(current / total) * 100}%"></div>
+        </div>
+        <div class="quiz-question">${q.question}</div>
+        <div class="quiz-options">
+          ${shuffledOptions.map(opt => `
+            <button class="quiz-option" onclick="answerQuestion(${opt.idx}, ${q.answer})">
+              ${opt.text}
+            </button>`).join('')}
+        </div>`
+
+      quizTimer = setInterval(() => {
+        timeLeft--
+        const timerEl = document.getElementById('quiz-timer')
+        if (!timerEl) { clearInterval(quizTimer); return }
+        timerEl.textContent = `⏱ ${timeLeft}с`
+        if (timeLeft <= 10) timerEl.classList.add('urgent')
+        if (timeLeft <= 0) {
+          clearInterval(quizTimer)
+          quizSkipped++
+          quizIndex++
+          showQuestion()
+        }
+      }, 1000)
+    }
+
+    function answerQuestion(selected, correct) {
+      clearInterval(quizTimer)
+      if (selected === correct) quizCorrect++
+      else quizWrong++
+      quizIndex++
+      showQuestion()
+    }
+
+    async function showResults() {
+      const total = quizOrder.length
+      const percent = total > 0 ? Math.round((quizCorrect / total) * 1000) / 10 : 0
+
+      let reward = quizCorrect * 10
+      const isAllCorrect = quizCorrect === total && quizSkipped === 0 && quizWrong === 0
+      if (isAllCorrect) reward *= 2
+
+      // Сохраняем деньги
+      if (currentUserId) {
+        const newMoney = currentMoney + reward
+        await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
+        currentMoney = newMoney
+      }
+
+      document.getElementById('quiz-box').innerHTML = `
+        <div class="quiz-results">
+          <div class="quiz-results-title">Результаты теста</div>
+          <div class="quiz-results-score">${percent}%</div>
+          <div class="quiz-results-grid">
+            <div class="quiz-stat-card total">
+              <div class="quiz-stat-label">Всего вопросов</div>
+              <div class="quiz-stat-value">${total}</div>
+            </div>
+            <div class="quiz-stat-card correct">
+              <div class="quiz-stat-label">Правильно</div>
+              <div class="quiz-stat-value">${quizCorrect}</div>
+            </div>
+            <div class="quiz-stat-card wrong">
+              <div class="quiz-stat-label">Неправильно</div>
+              <div class="quiz-stat-value">${quizWrong}</div>
+            </div>
+            <div class="quiz-stat-card skipped">
+              <div class="quiz-stat-label">Пропущено</div>
+              <div class="quiz-stat-value">${quizSkipped}</div>
+            </div>
+          </div>
+          <div class="quiz-reward">
+            ${isAllCorrect ? '🎉 Все правильно! Бонус x2!' : '💰 Награда'}
+            <div class="quiz-reward-amount">+${reward} 🪙</div>
+          </div>
+          <button class="quiz-close-btn" onclick="closeQuiz()">Закрыть</button>
+        </div>`
+    }
+
+    function closeQuiz() {
+      clearInterval(quizTimer)
+      document.getElementById('quiz-overlay').classList.remove('active')
+    }
 
     async function init() {
       const { data: { session } } = await client.auth.getSession()
       if (!session) { window.location.href = 'index.html'; return }
 
+      currentUserId = session.user.id
+
       const { data, error } = await client
         .from('profiles')
-        .select('name, profile_bg, profile_avatar, wins, win_streak')
+        .select('name, profile_bg, profile_avatar, wins, win_streak, money')
         .eq('id', session.user.id)
         .single()
 
       if (error || !data) { window.location.href = 'index.html'; return }
+
+      currentMoney = data.money ?? 0
 
       document.getElementById('profile-name').textContent = data.name
       document.getElementById('wins-count').textContent = data.wins ?? 0
@@ -108,18 +250,6 @@
       if (data.profile_bg) {
         const btn = document.getElementById('profile-btn')
         btn.style.backgroundImage = `url('${data.profile_bg}')`
-
-const img = document.createElement('img')
-img.src = data.profile_bg
-img.style.position = 'absolute'
-img.style.inset = '0'
-img.style.width = '100%'
-img.style.height = '100%'
-img.style.objectFit = 'contain'
-img.style.zIndex = '0'
-
-btn.appendChild(img)
-
         btn.classList.add('has-bg')
       }
 
@@ -217,23 +347,7 @@ btn.appendChild(img)
         }
       })
 
-      let questionsHtml = ''
-      if (data.questions && data.questions.length > 0) {
-        questionsHtml = `
-          <div class="questions-section">
-            <div class="questions-title">Вопросы по теме</div>
-            ${data.questions.map((q, qi) => `
-              <div class="question-card">
-                <div class="question-text">${qi + 1}. ${q.question}</div>
-                <div class="question-options">
-                  ${q.options.map((opt, oi) => `
-                    <button class="option-btn" onclick="checkAnswer(this, ${oi}, ${q.answer})">
-                      ${opt}
-                    </button>`).join('')}
-                </div>
-              </div>`).join('')}
-          </div>`
-      }
+      const hasQuestions = data.questions && data.questions.length > 0
 
       content.innerHTML = `
         <div class="lecture-body">
@@ -241,18 +355,10 @@ btn.appendChild(img)
           ${data.description ? `<div class="lecture-description">${data.description}</div>` : ''}
           ${blocksHtml}
         </div>
-        ${questionsHtml}`
-    }
-
-    function checkAnswer(btn, selected, correct) {
-      const options = btn.parentElement.querySelectorAll('.option-btn')
-      options.forEach(b => b.disabled = true)
-      if (selected === correct) {
-        btn.classList.add('correct')
-      } else {
-        btn.classList.add('wrong')
-        options[correct].classList.add('correct')
-      }
+        ${hasQuestions ? `
+          <button class="start-test-btn" onclick='startQuiz(${JSON.stringify(data.questions)})'>
+            🧪 Начать тест (${data.questions.length} вопросов)
+          </button>` : ''}`
     }
 
     function toggleDropdown(e) {
