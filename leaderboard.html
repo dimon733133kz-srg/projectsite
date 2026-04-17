@@ -92,7 +92,7 @@
 
       const { data: me } = await client
         .from('profiles')
-        .select('name, group, profile_bg, profile_avatar, wins, win_streak')
+        .select('name, "group", profile_bg, profile_avatar, wins, win_streak')
         .eq('id', session.user.id)
         .single()
 
@@ -112,7 +112,7 @@
 
       const { data } = await client
         .from('profiles')
-        .select('name, group, profile_bg, profile_avatar, wins, win_streak')
+        .select('name, "group", profile_bg, profile_avatar, wins, win_streak')
 
       allUsers = data || []
       render()
