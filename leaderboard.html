@@ -46,7 +46,7 @@
     <div class="leaderboard-layout">
 
       <div class="leaderboard-sidebar">
-        <a href="main.html" class="back-btn" style="margin: 12px 10px 4px;">← Назад</a>
+        <a href="main.html" class="back-btn" style="margin: 12px 8px 8px;">← Назад</a>
         <button class="lb-btn active" onclick="setMode('all', this)">🌐 Общий</button>
         <button class="lb-btn" onclick="setMode('groups', this)">🏫 Лучшие из групп</button>
         <button class="lb-btn" onclick="setMode('my', this)">👥 Своя группа</button>
@@ -102,9 +102,7 @@
       document.getElementById('wins-count').textContent = me.wins ?? 0
       document.getElementById('streak-count').textContent = me.win_streak ?? 0
 
-      if (me.profile_avatar) {
-        document.getElementById('profile-avatar-img').src = me.profile_avatar
-      }
+      if (me.profile_avatar) document.getElementById('profile-avatar-img').src = me.profile_avatar
 
       if (me.profile_bg) {
         const btn = document.getElementById('profile-btn')
@@ -140,12 +138,8 @@
       if (mode === 'groups') {
         const best = {}
         users.forEach(u => {
-          if (!best[u.group]) {
-            best[u.group] = u
-          } else {
-            const val = sortType === 'streak' ? 'win_streak' : 'wins'
-            if (u[val] > best[u.group][val]) best[u.group] = u
-          }
+          const val = sortType === 'streak' ? 'win_streak' : 'wins'
+          if (!best[u.group] || u[val] > best[u.group][val]) best[u.group] = u
         })
         users = Object.values(best)
       }
@@ -155,8 +149,8 @@
       }
 
       users.sort((a, b) => sortType === 'streak'
-        ? b.win_streak - a.win_streak
-        : b.wins - a.wins)
+        ? (b.win_streak ?? 0) - (a.win_streak ?? 0)
+        : (b.wins ?? 0) - (a.wins ?? 0))
 
       const container = document.getElementById('leaders-list')
       container.innerHTML = ''
@@ -168,19 +162,23 @@
 
       users.forEach((u, index) => {
         const isMe = currentUser && u.name === currentUser.name && u.group === currentUser.group
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`
+
+        let rankClass = ''
+        let rankLabel = ''
+        if (index === 0) { rankClass = 'rank-gold'; rankLabel = '🥇' }
+        else if (index === 1) { rankClass = 'rank-silver'; rankLabel = '🥈' }
+        else if (index === 2) { rankClass = 'rank-bronze'; rankLabel = '🥉' }
+        else rankLabel = `${index + 1}`
 
         const el = document.createElement('div')
-        el.className = 'leader-card' + (isMe ? ' leader-card-me' : '')
-
-        if (u.profile_bg) {
-          el.style.backgroundImage = `url('${u.profile_bg}')`
-        }
+        el.className = `leader-card ${rankClass} ${isMe ? 'leader-card-me' : ''}`
+        if (u.profile_bg) el.style.backgroundImage = `url('${u.profile_bg}')`
 
         el.innerHTML = `
+          <div class="leader-overlay"></div>
           <div class="leader-inner">
             <div class="leader-left">
-              <div class="leader-rank">${medal}</div>
+              <div class="leader-rank">${rankLabel}</div>
               <div class="leader-avatar">
                 <img src="${u.profile_avatar || 'icons/profile-default.png'}" alt="${u.name}">
               </div>
