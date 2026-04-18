@@ -82,7 +82,7 @@
 
   <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+    const SUPABASE_ANON_KEY = 
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -91,7 +91,6 @@
     let currentUserId = null
     let currentMoney = 0
 
-    // ===== КВИЗ =====
     let quizQuestions = []
     let quizOrder = []
     let quizIndex = 0
@@ -134,6 +133,7 @@
 
   const q = quizQuestions[quizOrder[quizIndex]]
   let timeLeft = 20
+  let answered = false
 
   const options = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
 
@@ -142,35 +142,33 @@
       <div>${quizIndex + 1}/${quizOrder.length}</div>
       <div class="quiz-timer" id="quiz-timer">⏱ ${timeLeft}</div>
     </div>
-
     <div class="quiz-question">${q.question}</div>
-
     <div class="quiz-options">
       ${options.map(opt => `
         <button class="quiz-option" data-id="${opt.idx}">
           ${opt.text}
         </button>
       `).join('')}
-    </div>
-  `
+    </div>`
 
   document.querySelectorAll('.quiz-option').forEach(btn => {
     btn.onclick = () => {
+      if (answered) return
+      answered = true
+      clearInterval(quizTimer)
       answerQuestion(parseInt(btn.dataset.id), q.answer)
     }
   })
 
   quizTimer = setInterval(() => {
     timeLeft--
-
     const el = document.getElementById('quiz-timer')
-    if (!el) return
-
+    if (!el) { clearInterval(quizTimer); return }
     el.textContent = `⏱ ${timeLeft}`
-
     if (timeLeft <= 5) el.classList.add('urgent')
-
     if (timeLeft <= 0) {
+      if (answered) return
+      answered = true
       clearInterval(quizTimer)
       quizSkipped++
       quizIndex++
@@ -179,14 +177,12 @@
   }, 1000)
 }
 
-
-    function answerQuestion(selected, correct) {
-      clearInterval(quizTimer)
-      if (selected === correct) quizCorrect++
-      else quizWrong++
-      quizIndex++
-      showQuestion()
-    }
+function answerQuestion(selected, correct) {
+  if (selected === correct) quizCorrect++
+  else quizWrong++
+  quizIndex++
+  showQuestion()
+}
 
     async function showResults() {
       const total = quizOrder.length
