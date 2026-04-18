@@ -6,199 +6,6 @@
   <title>Лекции</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    .quiz-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(10, 15, 50, 0.92);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .quiz-overlay.active { display: flex; }
-
-    .quiz-box {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      width: 100%;
-      max-width: 560px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-    }
-
-    .quiz-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .quiz-counter {
-      font-size: 13px;
-      font-weight: 600;
-      color: #94a3b8;
-    }
-
-    .quiz-timer {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fef3c7;
-      border: 1.5px solid #fbbf24;
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #92400e;
-      transition: background 0.3s, border-color 0.3s;
-    }
-
-    .quiz-timer.urgent {
-      background: #fee2e2;
-      border-color: #f87171;
-      color: #991b1b;
-    }
-
-    .quiz-question {
-      font-size: 18px;
-      font-weight: 700;
-      color: #1e293b;
-      line-height: 1.5;
-    }
-
-    .quiz-options {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .quiz-option {
-      padding: 14px 18px;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      background: white;
-      font-size: 15px;
-      color: #1e293b;
-      cursor: pointer;
-      text-align: left;
-      transition: background 0.15s, border-color 0.15s, transform 0.1s;
-      font-weight: 500;
-    }
-
-    .quiz-option:hover { background: #f5f3ff; border-color: #a78bfa; transform: translateX(4px); }
-    .quiz-option:active { transform: scale(0.98); }
-
-    .quiz-progress-bar {
-      height: 6px;
-      background: #e2e8f0;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .quiz-progress-fill {
-      height: 100%;
-      background: linear-gradient(to right, var(--navy), var(--purple));
-      border-radius: 10px;
-      transition: width 0.3s ease;
-    }
-
-    /* Результаты */
-    .quiz-results {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .quiz-results-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: #1e293b;
-      text-align: center;
-    }
-
-    .quiz-results-score {
-      text-align: center;
-      font-size: 48px;
-      font-weight: 800;
-      color: var(--purple);
-    }
-
-    .quiz-results-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .quiz-stat-card {
-      border-radius: 12px;
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .quiz-stat-card.correct { background: #e8fdf5; border: 1.5px solid #34d399; }
-    .quiz-stat-card.wrong { background: #fff5f5; border: 1.5px solid #fca5a5; }
-    .quiz-stat-card.skipped { background: #fefce8; border: 1.5px solid #fbbf24; }
-    .quiz-stat-card.total { background: #f0f4ff; border: 1.5px solid #a5b4fc; }
-
-    .quiz-stat-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .quiz-stat-value { font-size: 24px; font-weight: 800; color: #1e293b; }
-
-    .quiz-reward {
-      text-align: center;
-      background: #fefce8;
-      border: 2px solid #facc15;
-      border-radius: 12px;
-      padding: 16px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #92400e;
-    }
-
-    .quiz-reward-amount { font-size: 28px; color: #ca8a04; }
-
-    .quiz-close-btn {
-      padding: 14px;
-      background: linear-gradient(to right, var(--navy), var(--purple));
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .quiz-close-btn:hover { opacity: 0.88; }
-
-    .start-test-btn {
-      margin: 0 40px 40px;
-      padding: 14px;
-      background: linear-gradient(to right, var(--emerald), #059669);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-
-    .start-test-btn:hover { opacity: 0.88; }
-    .start-test-btn:active { transform: scale(0.98); }
-
-    @media (max-width: 600px) {
-      .quiz-box { padding: 24px 18px; margin: 16px; }
-      .quiz-question { font-size: 16px; }
-      .quiz-results-score { font-size: 36px; }
-      .quiz-results-grid { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
 </head>
 <body>
 
@@ -268,10 +75,8 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
-  <!-- КВИЗ ОВЕРЛЕЙ -->
   <div class="quiz-overlay" id="quiz-overlay">
     <div class="quiz-box" id="quiz-box">
-      <!-- Содержимое рендерится через JS -->
     </div>
   </div>
 
@@ -305,61 +110,75 @@
     }
 
     function startQuiz(questions) {
-      quizQuestions = questions
-      quizOrder = shuffle(questions.map((_, i) => i))
-      quizIndex = 0
-      quizCorrect = 0
-      quizWrong = 0
-      quizSkipped = 0
-      document.getElementById('quiz-overlay').classList.add('active')
+  if (!questions || questions.length === 0) return
+
+  quizQuestions = questions
+  quizOrder = shuffle(questions.map((_, i) => i))
+  quizIndex = 0
+  quizCorrect = 0
+  quizWrong = 0
+  quizSkipped = 0
+
+  document.getElementById('quiz-overlay').classList.add('active')
+  showQuestion()
+}
+
+
+   function showQuestion() {
+  if (quizIndex >= quizOrder.length) {
+    showResults()
+    return
+  }
+
+  clearInterval(quizTimer)
+
+  const q = quizQuestions[quizOrder[quizIndex]]
+  let timeLeft = 20
+
+  const options = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
+
+  document.getElementById('quiz-box').innerHTML = `
+    <div class="quiz-top">
+      <div>${quizIndex + 1}/${quizOrder.length}</div>
+      <div class="quiz-timer" id="quiz-timer">⏱ ${timeLeft}</div>
+    </div>
+
+    <div class="quiz-question">${q.question}</div>
+
+    <div class="quiz-options">
+      ${options.map(opt => `
+        <button class="quiz-option" data-id="${opt.idx}">
+          ${opt.text}
+        </button>
+      `).join('')}
+    </div>
+  `
+
+  document.querySelectorAll('.quiz-option').forEach(btn => {
+    btn.onclick = () => {
+      answerQuestion(parseInt(btn.dataset.id), q.answer)
+    }
+  })
+
+  quizTimer = setInterval(() => {
+    timeLeft--
+
+    const el = document.getElementById('quiz-timer')
+    if (!el) return
+
+    el.textContent = `⏱ ${timeLeft}`
+
+    if (timeLeft <= 5) el.classList.add('urgent')
+
+    if (timeLeft <= 0) {
+      clearInterval(quizTimer)
+      quizSkipped++
+      quizIndex++
       showQuestion()
     }
+  }, 1000)
+}
 
-    function showQuestion() {
-      if (quizIndex >= quizOrder.length) {
-        showResults()
-        return
-      }
-
-      clearInterval(quizTimer)
-
-      const q = quizQuestions[quizOrder[quizIndex]]
-      const total = quizOrder.length
-      const current = quizIndex + 1
-      let timeLeft = 30
-
-      const shuffledOptions = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
-
-      document.getElementById('quiz-box').innerHTML = `
-        <div class="quiz-top">
-          <div class="quiz-counter">Вопрос ${current} из ${total}</div>
-          <div class="quiz-timer" id="quiz-timer">⏱ ${timeLeft}с</div>
-        </div>
-        <div class="quiz-progress-bar">
-          <div class="quiz-progress-fill" style="width: ${(current / total) * 100}%"></div>
-        </div>
-        <div class="quiz-question">${q.question}</div>
-        <div class="quiz-options">
-          ${shuffledOptions.map(opt => `
-            <button class="quiz-option" onclick="answerQuestion(${opt.idx}, ${q.answer})">
-              ${opt.text}
-            </button>`).join('')}
-        </div>`
-
-      quizTimer = setInterval(() => {
-        timeLeft--
-        const timerEl = document.getElementById('quiz-timer')
-        if (!timerEl) { clearInterval(quizTimer); return }
-        timerEl.textContent = `⏱ ${timeLeft}с`
-        if (timeLeft <= 10) timerEl.classList.add('urgent')
-        if (timeLeft <= 0) {
-          clearInterval(quizTimer)
-          quizSkipped++
-          quizIndex++
-          showQuestion()
-        }
-      }, 1000)
-    }
 
     function answerQuestion(selected, correct) {
       clearInterval(quizTimer)
@@ -529,34 +348,48 @@
     }
 
     function renderLecture(data) {
-      const content = document.getElementById('lecture-content')
+  const content = document.getElementById('lecture-content')
 
-      let blocksHtml = ''
-      data.content.forEach(block => {
-        if (block.type === 'heading') {
-          blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`
-        } else if (block.type === 'paragraph') {
-          blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`
-        } else if (block.type === 'code') {
-          blocksHtml += `<pre class="lecture-block-code">${block.text}</pre>`
-        } else if (block.type === 'image') {
-          blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="${block.alt || ''}">`
-        }
-      })
+  let blocksHtml = ''
 
-      const hasQuestions = data.questions && data.questions.length > 0
-
-      content.innerHTML = `
-        <div class="lecture-body">
-          <h1>${data.title}</h1>
-          ${data.description ? `<div class="lecture-description">${data.description}</div>` : ''}
-          ${blocksHtml}
-        </div>
-        ${hasQuestions ? `
-          <button class="start-test-btn" onclick='startQuiz(${JSON.stringify(data.questions)})'>
-            🧪 Начать тест (${data.questions.length} вопросов)
-          </button>` : ''}`
+  data.content.forEach(block => {
+    if (block.type === 'heading') {
+      blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`
     }
+    else if (block.type === 'paragraph') {
+      blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`
+    }
+    else if (block.type === 'code') {
+      blocksHtml += `<pre class="lecture-block-code">${block.text}</pre>`
+    }
+    else if (block.type === 'image') {
+      blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="">`
+    }
+  })
+
+  const hasQuestions = data.questions && data.questions.length > 0
+
+  content.innerHTML = `
+    <div class="lecture-body">
+      <h1>${data.title}</h1>
+      ${data.description ? `<div class="lecture-description">${data.description}</div>` : ''}
+      ${blocksHtml}
+    </div>
+
+    ${hasQuestions ? `
+      <button class="start-test-btn" id="start-test-btn">
+        🧪 Начать тест (${data.questions.length})
+      </button>
+    ` : ''}
+  `
+
+  if (hasQuestions) {
+    document.getElementById('start-test-btn').onclick = () => {
+      startQuiz(data.questions)
+    }
+  }
+}
+
 
     function toggleDropdown(e) {
       e.stopPropagation()
