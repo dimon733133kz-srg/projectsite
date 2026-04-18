@@ -205,7 +205,7 @@
           reward: reward
         })
       }
-
+      window._lastQuizResult = { correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped, total, percent, reward }
       renderResultsBox({ correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped, total, percent, reward }, isAllCorrect)
     }
 
@@ -247,9 +247,20 @@
     }
 
     function closeQuiz() {
-      clearInterval(quizTimer)
-      document.getElementById('quiz-overlay').classList.remove('active')
+  clearInterval(quizTimer)
+  document.getElementById('quiz-overlay').classList.remove('active')
+
+  if (window._lastQuizResult && activeLectureBtn) {
+    const r = window._lastQuizResult
+    const btn = document.getElementById('start-test-btn')
+    if (btn) {
+      btn.style.background = 'linear-gradient(to right, #475569, #64748b)'
+      btn.textContent = `📊 Посмотреть результат (${r.percent}%)`
+      btn.onclick = () => showSavedResult(r)
     }
+    window._lastQuizResult = null
+  }
+}
 
     async function init() {
       const { data: { session } } = await client.auth.getSession()
