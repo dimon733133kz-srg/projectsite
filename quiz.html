@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Викторина</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
+    </div>
+
+    <div class="header-right">
+      <div class="stat-badge wins">
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
+      </div>
+      <div class="stat-badge streak">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
+
+      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+        <div class="profile-icon">
+          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        </div>
+        <span class="profile-name" id="profile-name">Загрузка...</span>
+        <span class="profile-arrow">▼</span>
+
+        <div class="dropdown">
+          <a href="#">⚙️ Настройки</a>
+          <div class="divider"></div>
+          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="quiz-page-layout" id="quiz-page-layout">
+      <!-- Контент рендерится через JS -->
+    </div>
+  </main>
+
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const QUESTIONS_URL = 'https://rnijptnxsheusvxepiht.supabase.co/storage/v1/object/public/lectures/quiz.json'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    let currentUserId = null
+    let currentMoney = 0
+    let currentWins = 0
+    let currentStreak = 0
+
+    let allQuestions = []
+    let selectedCount = 10
+    let selectedTime = 20
+
+    let quizQuestions = []
+    let quizIndex = 0
+    let quizCorrect = 0
+    let quizWrong = 0
+    let quizLives = 3
+    let quizTimer = null
+    let timeLeft = 0
+
+      async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
+
+      currentUserId = session.user.id
+
+      const { data, error } = await client
+        .from('profiles')
+        .select('name, profile_bg, profile_avatar, wins, win_streak, money')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !data) { window.location.href = 'index.html'; return }
+
+      currentMoney = data.money ?? 0
+      currentWins = data.wins ?? 0
+      currentStreak = data.win_streak ?? 0
+
+      document.getElementById('profile-name').textContent = data.name
+      document.getElementById('wins-count').textContent = currentWins
+      document.getElementById('streak-count').textContent = currentStreak
+
+      if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
+
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
+
+      try {
+        const res = await fetch(QUESTIONS_URL)
+        const json = await res.json()
+        allQuestions = json.questions || []
+      } catch (e) {
+        allQuestions = []
+      }
+
+      showSetup()
+    }
+
+    // ===== ЭКРАН НАСТРОЙКИ =====
+    function showSetup() {
+      const layout = document.getElementById('quiz-page-layout')
+      layout.innerHTML = `
+        <div class="quiz-setup-box">
+          <div class="quiz-setup-title">⚡ Викторина</div>
+
+          <div class="quiz-setup-section">
+            <div class="quiz-setup-label">Количество вопросов</div>
+            <div class="quiz-setup-options" id="count-opts">
+              <button class="quiz-setup-opt selected" data-val="10" onclick="selectOpt(this, 'count')">10</button>
+              <button class="quiz-setup-opt" data-val="20" onclick="selectOpt(this, 'count')">20</button>
+              <button class="quiz-setup-opt" data-val="30" onclick="selectOpt(this, 'count')">30</button>
+            </div>
+          </div>
+
+          <div class="quiz-setup-section">
+            <div class="quiz-setup-label">Время на ответ</div>
+            <div class="quiz-setup-options" id="time-opts">
+              <button class="quiz-setup-opt" data-val="10" onclick="selectOpt(this, 'time')">10 сек</button>
+              <button class="quiz-setup-opt" data-val="15" onclick="selectOpt(this, 'time')">15 сек</button>
+              <button class="quiz-setup-opt selected" data-val="20" onclick="selectOpt(this, 'time')">20 сек</button>
+              <button class="quiz-setup-opt" data-val="30" onclick="selectOpt(this, 'time')">30 сек</button>
+            </div>
+          </div>
+
+          <div style="font-size:13px; color:#94a3b8; text-align:center;">
+            Доступно вопросов: ${allQuestions.length} | Жизни: ❤️❤️❤️
+          </div>
+
+          <button class="quiz-start-btn" onclick="startQuiz()" ${allQuestions.length === 0 ? 'disabled' : ''}>
+            ${allQuestions.length === 0 ? 'Вопросы не загружены' : 'Начать викторину'}
+          </button>
+        </div>`
+    }
+
+    function selectOpt(btn, type) {
+      const group = btn.parentElement.querySelectorAll('.quiz-setup-opt')
+      group.forEach(b => b.classList.remove('selected'))
+      btn.classList.add('selected')
+      if (type === 'count') selectedCount = parseInt(btn.dataset.val)
+      else selectedTime = parseInt(btn.dataset.val)
+    }
+
+    function shuffle(arr) {
+      const a = [...arr]
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]]
+      }
+      return a
+    }
+
+    function startQuiz() {
+      const count = Math.min(selectedCount, allQuestions.length)
+      quizQuestions = shuffle(allQuestions).slice(0, count)
+      quizIndex = 0
+      quizCorrect = 0
+      quizWrong = 0
+      quizLives = 3
+      showQuestion()
+    }
+
+    // ===== ВОПРОС =====
+    function showQuestion() {
+      clearInterval(quizTimer)
+
+      if (quizIndex >= quizQuestions.length) {
+        showResults(true)
+        return
+      }
+
+      const q = quizQuestions[quizIndex]
+      const total = quizQuestions.length
+      timeLeft = selectedTime
+      let answered = false
+
+      const opts = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
+
+      const layout = document.getElementById('quiz-page-layout')
+      layout.innerHTML = `
+        <div class="quiz-game-box">
+          <div class="quiz-game-top">
+            <div class="quiz-lives" id="lives-row">
+              ${renderHearts()}
+            </div>
+            <div class="quiz-game-counter">${quizIndex + 1} / ${total}</div>
+            <div class="quiz-game-timer" id="qtimer">${timeLeft}</div>
+          </div>
+
+          <div class="quiz-timer-bar-wrap">
+            <div class="quiz-timer-bar" id="timer-bar" style="width:100%"></div>
+          </div>
+
+          <div class="quiz-game-question">${q.question}</div>
+
+          <div class="quiz-game-options">
+            ${opts.map(opt => `
+              <button class="quiz-game-option" data-id="${opt.idx}">
+                ${opt.text}
+              </button>`).join('')}
+          </div>
+        </div>`
+
+      document.querySelectorAll('.quiz-game-option').forEach(btn => {
+        btn.onclick = () => {
+          if (answered) return
+          answered = true
+          clearInterval(quizTimer)
+          handleAnswer(parseInt(btn.dataset.id), q.answer)
+        }
+      })
+
+      quizTimer = setInterval(() => {
+        timeLeft--
+        const timerEl = document.getElementById('qtimer')
+        const barEl = document.getElementById('timer-bar')
+        if (!timerEl) { clearInterval(quizTimer); return }
+
+        timerEl.textContent = timeLeft
+        if (barEl) {
+          barEl.style.width = `${(timeLeft / selectedTime) * 100}%`
+          if (timeLeft <= selectedTime * 0.3) {
+            timerEl.classList.add('urgent')
+            barEl.classList.add('urgent')
+          }
+        }
+
+        if (timeLeft <= 0) {
+          if (answered) return
+          answered = true
+          clearInterval(quizTimer)
+          loseLife(true)
+        }
+      }, 1000)
+    }
+
+    function renderHearts() {
+      let html = ''
+      for (let i = 0; i < 3; i++) {
+        const lost = i >= quizLives
+        html += `<img class="quiz-heart ${lost ? 'lost' : ''}" src="icons/heart.png" alt="❤️">`
+      }
+      return html
+    }
+
+    function handleAnswer(selected, correct) {
+      if (selected === correct) {
+        quizCorrect++
+        quizIndex++
+        showQuestion()
+      } else {
+        quizWrong++
+        loseLife(false)
+      }
+    }
+
+    function loseLife(isTimeout) {
+      quizLives--
+      if (!isTimeout) quizIndex++
+
+      if (quizLives <= 0) {
+        showResults(false)
+      } else {
+        showQuestion()
+      }
+    }
+
+    // ===== РЕЗУЛЬТАТЫ =====
+    async function showResults(won) {
+      clearInterval(quizTimer)
+
+      const total = quizQuestions.length
+      const percent = total > 0 ? Math.round((quizCorrect / total) * 1000) / 10 : 0
+      const allLivesLeft = quizLives === 3
+
+      // Формула денег
+      let base = quizCorrect * 5 + 30 * quizLives
+      if (allLivesLeft) base += 100
+
+      const streakMultiplier = 1 + currentStreak * 0.1
+      const timeMultiplier = selectedTime === 10 ? 2 : selectedTime === 15 ? 1.5 : selectedTime === 20 ? 1.25 : 1
+
+      let reward = Math.round(base * streakMultiplier * timeMultiplier)
+      if (allLivesLeft) reward = Math.round(reward * 1.5)
+
+      // Обновляем стрик и победы
+      let newStreak = currentStreak
+      let newWins = currentWins
+
+      if (won) {
+        newStreak = currentStreak + 1
+        newWins = currentWins + 1
+      } else {
+        newStreak = 0
+      }
+
+      const newMoney = currentMoney + reward
+
+      await client.from('profiles').update({
+        money: newMoney,
+        wins: newWins,
+        win_streak: newStreak
+      }).eq('id', currentUserId)
+
+      currentMoney = newMoney
+      currentWins = newWins
+      currentStreak = newStreak
+
+      document.getElementById('wins-count').textContent = newWins
+      document.getElementById('streak-count').textContent = newStreak
+
+      const layout = document.getElementById('quiz-page-layout')
+      layout.innerHTML = `
+        <div class="quiz-result-box">
+          <div class="quiz-result-title">${won ? '🏆 Победа!' : quizLives <= 0 ? '💔 Жизни кончились' : '⏱ Время вышло'}</div>
+          <div class="quiz-result-subtitle">${won ? 'Ты ответил на все вопросы!' : 'Лучше в следующий раз!'}</div>
+
+          <div class="quiz-result-score">${percent}%</div>
+
+          <div class="quiz-result-grid">
+            <div class="quiz-result-card correct">
+              <div class="quiz-result-card-label">Правильно</div>
+              <div class="quiz-result-card-value">${quizCorrect}</div>
+            </div>
+            <div class="quiz-result-card wrong">
+              <div class="quiz-result-card-label">Неправильно</div>
+              <div class="quiz-result-card-value">${quizWrong}</div>
+            </div>
+            <div class="quiz-result-card streak">
+              <div class="quiz-result-card-label">${won ? 'Новый стрик' : 'Стрик сброшен'}</div>
+              <div class="quiz-result-card-value">${won ? newStreak : '0'}</div>
+            </div>
+            <div class="quiz-result-card info">
+              <div class="quiz-result-card-label">Всего побед</div>
+              <div class="quiz-result-card-value">${newWins}</div>
+            </div>
+          </div>
+
+          <div class="quiz-result-reward">
+            💰 Награда
+            <div class="quiz-result-reward-amount">+${reward} 🪙</div>
+          </div>
+
+          <div class="quiz-result-breakdown">
+            База: ${quizCorrect} × 5 + 30 × ${quizLives} жизней${allLivesLeft ? ' + 100 бонус' : ''} = ${base}<br>
+            Стрик ×${streakMultiplier.toFixed(1)} | Таймер ×${timeMultiplier}${allLivesLeft ? ' | Все жизни ×1.5' : ''}
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <button class="quiz-result-btn" style="flex:1; background: linear-gradient(to right, #475569, #64748b);" onclick="showSetup()">
+              ← Назад
+            </button>
+            <button class="quiz-result-btn" style="flex:1;" onclick="startQuiz()">
+              Ещё раз
+            </button>
+          </div>
+        </div>`
+    }
+
+    function toggleDropdown(e) {
+      e.stopPropagation()
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+    })
+
+    async function logout() {
+      await client.auth.signOut()
+      window.location.href = 'index.html'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
