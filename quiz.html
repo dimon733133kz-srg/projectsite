@@ -291,7 +291,7 @@
       }
     }
 
-    // ===== РЕЗУЛЬТАТЫ =====
+    // Показ результат
     async function showResults(won) {
       clearInterval(quizTimer)
 
@@ -309,7 +309,7 @@
       let reward = Math.round(base * streakMultiplier * timeMultiplier)
       if (allLivesLeft) reward = Math.round(reward * 1.5)
 
-      // Обновляем стрик и победы
+      // Стрики и победы обновление хачу
       let newStreak = currentStreak
       let newWins = currentWins
 
