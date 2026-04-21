@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Игры</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
+    </div>
+
+    <div class="header-right">
+      <div class="stat-badge wins">
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
+      </div>
+      <div class="stat-badge streak">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
+
+      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+        <div class="profile-icon">
+          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        </div>
+        <span class="profile-name" id="profile-name">Загрузка...</span>
+        <span class="profile-arrow">▼</span>
+
+        <div class="dropdown">
+          <a href="#">⚙️ Настройки</a>
+          <div class="divider"></div>
+          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="main-content" style="flex:1; display:flex; align-items:stretch; padding:30px; width:100%;"></div>
+  </main>
+
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    let currentUserId = null
+    let currentMoney = 0
+    let pyodide = null
+    let pyodideLoading = false
+    let currentMode = 'task'
+    let currentTask = null
+    let taskSolved = false
+
+    const TASKS = [
+      {
+        id: 1,
+        title: 'Сумма двух чисел',
+        desc: 'Напиши функцию `add(a, b)` которая возвращает сумму двух чисел.',
+        examples: ['add(2, 3) → 5', 'add(-1, 10) → 9'],
+        tests: [
+          { call: 'add(2, 3)', expected: 5 },
+          { call: 'add(-1, 10)', expected: 9 },
+          { call: 'add(0, 0)', expected: 0 },
+          { call: 'add(100, 200)', expected: 300 },
+        ],
+        reward: 50
+      },
+      {
+        id: 2,
+        title: 'Чётное или нечётное',
+        desc: 'Напиши функцию `is_even(n)` которая возвращает `True` если число чётное, и `False` если нечётное.',
+        examples: ['is_even(4) → True', 'is_even(7) → False'],
+        tests: [
+          { call: 'is_even(4)', expected: true },
+          { call: 'is_even(7)', expected: false },
+          { call: 'is_even(0)', expected: true },
+          { call: 'is_even(-3)', expected: false },
+        ],
+        reward: 50
+      },
+      {
+        id: 3,
+        title: 'Максимум из трёх',
+        desc: 'Напиши функцию `max3(a, b, c)` которая возвращает наибольшее из трёх чисел.',
+        examples: ['max3(1, 5, 3) → 5', 'max3(10, 2, 8) → 10'],
+        tests: [
+          { call: 'max3(1, 5, 3)', expected: 5 },
+          { call: 'max3(10, 2, 8)', expected: 10 },
+          { call: 'max3(-1, -5, -3)', expected: -1 },
+          { call: 'max3(7, 7, 7)', expected: 7 },
+        ],
+        reward: 60
+      },
+      {
+        id: 4,
+        title: 'Факториал',
+        desc: 'Напиши функцию `factorial(n)` которая возвращает факториал числа n.',
+        examples: ['factorial(5) → 120', 'factorial(0) → 1'],
+        tests: [
+          { call: 'factorial(0)', expected: 1 },
+          { call: 'factorial(1)', expected: 1 },
+          { call: 'factorial(5)', expected: 120 },
+          { call: 'factorial(7)', expected: 5040 },
+        ],
+        reward: 80
+      },
+      {
+        id: 5,
+        title: 'Переворот строки',
+        desc: 'Напиши функцию `reverse_str(s)` которая возвращает строку в обратном порядке.',
+        examples: ['reverse_str("hello") → "olleh"', 'reverse_str("abc") → "cba"'],
+        tests: [
+          { call: 'reverse_str("hello")', expected: 'olleh' },
+          { call: 'reverse_str("abc")', expected: 'cba' },
+          { call: 'reverse_str("a")', expected: 'a' },
+          { call: 'reverse_str("Python")', expected: 'nohtyP' },
+        ],
+        reward: 70
+      },
+      {
+        id: 6,
+        title: 'Сумма списка',
+        desc: 'Напиши функцию `sum_list(lst)` которая возвращает сумму всех элементов списка.',
+        examples: ['sum_list([1, 2, 3]) → 6', 'sum_list([10, -5, 3]) → 8'],
+        tests: [
+          { call: 'sum_list([1, 2, 3])', expected: 6 },
+          { call: 'sum_list([10, -5, 3])', expected: 8 },
+          { call: 'sum_list([])', expected: 0 },
+          { call: 'sum_list([100])', expected: 100 },
+        ],
+        reward: 60
+      },
+      {
+        id: 7,
+        title: 'Палиндром',
+        desc: 'Напиши функцию `is_palindrome(s)` которая возвращает `True` если строка является палиндромом.',
+        examples: ['is_palindrome("radar") → True', 'is_palindrome("hello") → False'],
+        tests: [
+          { call: 'is_palindrome("radar")', expected: true },
+          { call: 'is_palindrome("hello")', expected: false },
+          { call: 'is_palindrome("a")', expected: true },
+          { call: 'is_palindrome("abba")', expected: true },
+        ],
+        reward: 80
+      },
+      {
+        id: 8,
+        title: 'Подсчёт гласных',
+        desc: 'Напиши функцию `count_vowels(s)` которая считает количество гласных букв (a, e, i, o, u) в строке.',
+        examples: ['count_vowels("hello") → 2', 'count_vowels("python") → 1'],
+        tests: [
+          { call: 'count_vowels("hello")', expected: 2 },
+          { call: 'count_vowels("python")', expected: 1 },
+          { call: 'count_vowels("aeiou")', expected: 5 },
+          { call: 'count_vowels("xyz")', expected: 0 },
+        ],
+        reward: 70
+      },
+      {
+        id: 9,
+        title: 'Число Фибоначчи',
+        desc: 'Напиши функцию `fib(n)` которая возвращает n-е число Фибоначчи (начиная с fib(0)=0, fib(1)=1).',
+        examples: ['fib(6) → 8', 'fib(0) → 0'],
+        tests: [
+          { call: 'fib(0)', expected: 0 },
+          { call: 'fib(1)', expected: 1 },
+          { call: 'fib(6)', expected: 8 },
+          { call: 'fib(10)', expected: 55 },
+        ],
+        reward: 100
+      },
+      {
+        id: 10,
+        title: 'FizzBuzz',
+        desc: 'Напиши функцию `fizzbuzz(n)` которая возвращает "Fizz" если n делится на 3, "Buzz" если на 5, "FizzBuzz" если на оба, иначе само число как строку.',
+        examples: ['fizzbuzz(3) → "Fizz"', 'fizzbuzz(15) → "FizzBuzz"'],
+        tests: [
+          { call: 'fizzbuzz(3)', expected: 'Fizz' },
+          { call: 'fizzbuzz(5)', expected: 'Buzz' },
+          { call: 'fizzbuzz(15)', expected: 'FizzBuzz' },
+          { call: 'fizzbuzz(7)', expected: '7' },
+        ],
+        reward: 90
+      }
+    ]
+
+    async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
+
+      currentUserId = session.user.id
+
+      const { data, error } = await client
+        .from('profiles')
+        .select('name, profile_bg, profile_avatar, wins, win_streak, money')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !data) { window.location.href = 'index.html'; return }
+
+      currentMoney = data.money ?? 0
+
+      document.getElementById('profile-name').textContent = data.name
+      document.getElementById('wins-count').textContent = data.wins ?? 0
+      document.getElementById('streak-count').textContent = data.win_streak ?? 0
+
+      if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
+
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
+
+      showGameSelect()
+    }
+
+    function showGameSelect() {
+      const content = document.getElementById('main-content')
+      content.style.alignItems = 'center'
+      content.style.justifyContent = 'center'
+      content.innerHTML = `
+        <div class="games-grid">
+          <button class="game-card" onclick="showCompiler()">
+            <div class="game-card-icon">🐍</div>
+            <div class="game-card-title">Компилятор</div>
+            <div class="game-card-desc">Реши задачи на Python или просто попробуй код</div>
+          </button>
+        </div>`
+    }
+
+    function showCompiler() {
+      currentMode = 'task'
+      const content = document.getElementById('main-content')
+      content.style.alignItems = 'stretch'
+      content.style.justifyContent = 'flex-start'
+      content.innerHTML = `
+        <div class="compiler-layout">
+          <div class="compiler-sidebar">
+            <button class="compiler-mode-btn active" id="btn-task" onclick="setMode('task')">
+              <span class="compiler-mode-btn-icon">📋</span> Задание
+            </button>
+            <button class="compiler-mode-btn" id="btn-sandbox" onclick="setMode('sandbox')">
+              <span class="compiler-mode-btn-icon">🏖️</span> Песочница
+            </button>
+            <div style="height:1px; background:rgba(255,255,255,0.1); margin:8px;"></div>
+            <button class="compiler-mode-btn" onclick="showGameSelect()" style="margin-top:auto;">
+              <span class="compiler-mode-btn-icon">←</span> Назад
+            </button>
+          </div>
+          <div class="compiler-content" id="compiler-content">
+            <div class="pyodide-loader" id="pyodide-loader">
+              <div style="font-size:24px;">🐍</div>
+              <div>Загрузка Python...</div>
+              <div class="pyodide-loader-bar">
+                <div class="pyodide-loader-fill" id="loader-fill" style="width:0%"></div>
+              </div>
+              <div id="loader-text" style="font-size:12px; color:#94a3b8;">Подготовка...</div>
+            </div>
+          </div>
+        </div>`
+
+      loadPyodide()
+    }
+
+    async function loadPyodide() {
+      if (pyodide) { renderMode(); return }
+      if (pyodideLoading) return
+      pyodideLoading = true
+
+      try {
+        const fill = document.getElementById('loader-fill')
+        const text = document.getElementById('loader-text')
+
+        if (fill) fill.style.width = '20%'
+        if (text) text.textContent = 'Загрузка интерпретатора...'
+
+        const script = document.createElement('script')
+        script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js'
+        document.head.appendChild(script)
+
+        await new Promise((res, rej) => { script.onload = res; script.onerror = rej })
+
+        if (fill) fill.style.width = '50%'
+        if (text) text.textContent = 'Инициализация Python...'
+
+        pyodide = await window.loadPyodide({
+          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/'
+        })
+
+        if (fill) fill.style.width = '100%'
+        if (text) text.textContent = 'Готово!'
+
+        await new Promise(r => setTimeout(r, 400))
+        renderMode()
+      } catch (e) {
+        const loader = document.getElementById('pyodide-loader')
+        if (loader) loader.innerHTML = `<div style="color:#dc2626; font-size:14px;">❌ Ошибка загрузки Python.<br>Проверь интернет соединение.</div>`
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode
+      document.getElementById('btn-task').classList.toggle('active', mode === 'task')
+      document.getElementById('btn-sandbox').classList.toggle('active', mode === 'sandbox')
+      renderMode()
+    }
+
+    function renderMode() {
+      if (currentMode === 'task') renderTaskMode()
+      else renderSandboxMode()
+    }
+
+    function renderTaskMode() {
+      if (!currentTask) {
+        const shuffled = [...TASKS].sort(() => Math.random() - 0.5)
+        currentTask = shuffled[0]
+        taskSolved = false
+      }
+
+      const content = document.getElementById('compiler-content')
+      content.innerHTML = `
+        <div class="compiler-topbar">
+          <div class="compiler-topbar-left">
+            <div class="compiler-page-title">📋 Задание</div>
+            <button class="back-btn" onclick="newTask()">🔀 Новое задание</button>
+          </div>
+          <button class="compiler-run-btn" id="run-btn" onclick="runTask()" ${taskSolved ? 'disabled' : ''}>
+            ▶ Запустить
+          </button>
+        </div>
+
+        <div class="compiler-body">
+          <div class="task-panel">
+            <div class="task-header">
+              <div class="task-title">${currentTask.title}</div>
+              <div class="task-badge">+${currentTask.reward} 🪙</div>
+            </div>
+            <div class="task-desc">${currentTask.desc}</div>
+            <div class="task-examples">
+              ${currentTask.examples.map(e => `<div class="task-example">${e}</div>`).join('')}
+            </div>
+          </div>
+
+          <div class="editor-wrap">
+            <div class="editor-label">Твой код</div>
+            <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="# Напиши функцию здесь...
+"></textarea>
+          </div>
+
+          <div class="console-wrap">
+            <div class="console-label">
+              Результат
+              <button class="console-clear-btn" onclick="clearConsole()">Очистить</button>
+            </div>
+            <div class="console-output" id="console-output">
+              <span class="info-line">// Запусти код чтобы увидеть результат</span>
+            </div>
+          </div>
+
+          ${taskSolved ? `<div class="task-result pass">✅ Задание выполнено! Награда уже получена.</div>` : ''}
+        </div>`
+
+      setupTabKey()
+    }
+
+    function newTask() {
+      const shuffled = [...TASKS].sort(() => Math.random() - 0.5)
+      currentTask = shuffled[0]
+      taskSolved = false
+      renderTaskMode()
+    }
+
+    async function runTask() {
+      if (!pyodide || taskSolved) return
+
+      const code = document.getElementById('code-editor').value
+      const out = document.getElementById('console-output')
+      out.innerHTML = '<span class="info-line">// Выполняется...</span>'
+
+      let output = ''
+      let passed = 0
+      let failed = 0
+      let resultLines = []
+
+      for (const test of currentTask.tests) {
+        try {
+          const fullCode = code + '\nresult = ' + test.call
+          pyodide.runPython(fullCode)
+          const result = pyodide.globals.get('result')
+
+          const got = typeof result === 'boolean' ? result : (typeof result === 'string' ? result : Number(result))
+          const exp = test.expected
+
+          const ok = String(got) === String(exp)
+          if (ok) {
+            passed++
+            resultLines.push(`<span class="ok-line">✅ ${test.call} → ${got}</span>`)
+          } else {
+            failed++
+            resultLines.push(`<span class="err-line">❌ ${test.call} → получено: ${got}, ожидалось: ${exp}</span>`)
+          }
+        } catch (e) {
+          failed++
+          resultLines.push(`<span class="err-line">❌ ${test.call} → Ошибка: ${e.message}</span>`)
+        }
+      }
+
+      out.innerHTML = resultLines.join('\n')
+
+      if (failed === 0) {
+        out.innerHTML += `\n<span class="ok-line">
+🎉 Все тесты пройдены! +${currentTask.reward} 🪙</span>`
+        taskSolved = true
+
+        const newMoney = currentMoney + currentTask.reward
+        await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
+        currentMoney = newMoney
+
+        const runBtn = document.getElementById('run-btn')
+        if (runBtn) runBtn.disabled = true
+
+        const body = document.querySelector('.compiler-body')
+        if (body) {
+          const div = document.createElement('div')
+          div.className = 'task-result pass'
+          div.textContent = '✅ Задание выполнено! Награда уже получена.'
+          body.appendChild(div)
+        }
+      } else {
+        out.innerHTML += `\n<span class="info-line">Пройдено: ${passed}/${currentTask.tests.length}</span>`
+      }
+    }
+
+    function renderSandboxMode() {
+      const content = document.getElementById('compiler-content')
+      content.innerHTML = `
+        <div class="compiler-topbar">
+          <div class="compiler-topbar-left">
+            <div class="compiler-page-title">🏖️ Песочница</div>
+          </div>
+          <button class="compiler-run-btn" onclick="runSandbox()">▶ Запустить</button>
+        </div>
+
+        <div class="compiler-body">
+          <div class="editor-wrap">
+            <div class="editor-label">Код</div>
+            <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="# Пиши любой Python код...
+print('Hello, World!')
+"></textarea>
+          </div>
+
+          <div class="console-wrap">
+            <div class="console-label">
+              Консоль
+              <button class="console-clear-btn" onclick="clearConsole()">Очистить</button>
+            </div>
+            <div class="console-output" id="console-output">
+              <span class="info-line">// Запусти код чтобы увидеть вывод</span>
+            </div>
+          </div>
+        </div>`
+
+      setupTabKey()
+    }
+
+    async function runSandbox() {
+      if (!pyodide) return
+
+      const code = document.getElementById('code-editor').value
+      const out = document.getElementById('console-output')
+      out.innerHTML = ''
+
+      let outputLines = []
+
+      pyodide.setStdout({ batched: (text) => outputLines.push(text) })
+      pyodide.setStderr({ batched: (text) => outputLines.push(`<span class="err-line">${text}</span>`) })
+
+      try {
+        await pyodide.runPythonAsync(code)
+        if (outputLines.length === 0) {
+          out.innerHTML = '<span class="info-line">// Код выполнен без вывода</span>'
+        } else {
+          out.innerHTML = outputLines.map(l =>
+            l.startsWith('<span') ? l : `<span class="out-line">${l}</span>`
+          ).join('\n')
+        }
+      } catch (e) {
+        out.innerHTML = `<span class="err-line">${e.message}</span>`
+      }
+    }
+
+    function clearConsole() {
+      const out = document.getElementById('console-output')
+      if (out) out.innerHTML = '<span class="info-line">// Очищено</span>'
+    }
+
+    function setupTabKey() {
+      const editor = document.getElementById('code-editor')
+      if (!editor) return
+      editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          e.preventDefault()
+          const start = this.selectionStart
+          const end = this.selectionEnd
+          this.value = this.value.substring(0, start) + '    ' + this.value.substring(end)
+          this.selectionStart = this.selectionEnd = start + 4
+        }
+      })
+    }
+
+    function toggleDropdown(e) {
+      e.stopPropagation()
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+    })
+
+    async function logout() {
+      await client.auth.signOut()
+      window.location.href = 'index.html'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
