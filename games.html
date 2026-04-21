@@ -495,6 +495,14 @@ print('Hello, World!')
       pyodide.setStderr({ batched: (text) => outputLines.push(`<span class="err-line">${text}</span>`) })
 
       try {
+	    pyodide.runPython(`
+import builtins
+def _input(prompt=''):
+    import js
+    result = js.prompt(prompt)
+    return result if result is not None else ''
+builtins.input = _input
+`)
         await pyodide.runPythonAsync(code)
         if (outputLines.length === 0) {
           out.innerHTML = '<span class="info-line">// Код выполнен без вывода</span>'
