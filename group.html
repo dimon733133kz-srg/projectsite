@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Группа</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
+    </div>
+
+    <div class="header-right">
+      <div class="stat-badge wins">
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
+      </div>
+      <div class="stat-badge streak">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
+
+      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
+        <div class="profile-icon">
+          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        </div>
+        <span class="profile-name" id="profile-name">Загрузка...</span>
+        <span class="profile-arrow">▼</span>
+
+        <div class="dropdown">
+          <a href="#">⚙️ Настройки</a>
+          <div class="divider"></div>
+          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="group-layout">
+
+      <div class="group-sidebar" id="group-sidebar">
+        <div class="group-sidebar-title">Разделы</div>
+        <div id="sections-sidebar">
+          <div style="padding:12px 16px; font-size:13px; color:rgba(255,255,255,0.4);">Загрузка...</div>
+        </div>
+        <div class="group-sidebar-divider"></div>
+        <button class="teacher-btn" id="teacher-btn" onclick="openTeacherModal()">
+          🔑 Преподаватель
+        </button>
+      </div>
+
+      <div class="group-content" id="group-content">
+        <div class="group-empty">
+          <div class="group-empty-icon">👥</div>
+          <div class="group-empty-text">Выбери раздел слева</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
+
+  <div class="teacher-modal-overlay" id="teacher-modal">
+    <div class="teacher-modal">
+      <div class="teacher-modal-title">🔑 Доступ преподавателя</div>
+      <div class="teacher-modal-desc">Введите пароль для просмотра всех групп</div>
+      <input type="password" id="teacher-password-input" placeholder="Пароль"
+        onkeydown="if(event.key==='Enter') checkPassword()">
+      <div class="teacher-modal-err" id="teacher-modal-err"></div>
+      <div class="teacher-modal-btns">
+        <button class="teacher-modal-btn cancel" onclick="closeTeacherModal()">Отмена</button>
+        <button class="teacher-modal-btn confirm" onclick="checkPassword()">Войти</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    let currentUser = null
+    let isTeacher = false
+    let teacherPassword = null
+    let allSections = []
+    let allLectures = []
+    let allProfiles = []
+    let allResults = []
+    let currentSectionId = null
+    let viewingGroup = null
+
+    async function init() {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
+
+      const { data, error } = await client
+        .from('profiles')
+        .select('id, name, group, profile_bg, profile_avatar, wins, win_streak')
+        .eq('id', session.user.id)
+        .single()
+
+      if (error || !data) { window.location.href = 'index.html'; return }
+
+      currentUser = data
+      viewingGroup = data.group
+
+      document.getElementById('profile-name').textContent = data.name
+      document.getElementById('wins-count').textContent = data.wins ?? 0
+      document.getElementById('streak-count').textContent = data.win_streak ?? 0
+      if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
+
+      await loadTeacherPassword()
+      await loadData()
+    }
+
+    async function loadTeacherPassword() {
+      try {
+        const { data, error } = await client.storage
+          .from('config')
+          .download('teacher_password.txt')
+
+        if (error || !data) return
+
+        teacherPassword = (await data.text()).trim()
+      } catch (e) {
+        teacherPassword = null
+      }
+    }
+
+    async function loadData() {
+      const [sectionsRes, lecturesRes, profilesRes, resultsRes] = await Promise.all([
+        client.from('sections').select('id, title, order').order('order'),
+        client.from('lectures').select('id, title, section_id, order').order('order'),
+        client.from('profiles').select('id, name, group, profile_avatar'),
+        client.from('quiz_results').select('user_id, lecture_id, percent')
+      ])
+
+      allSections = sectionsRes.data || []
+      allLectures = lecturesRes.data || []
+      allProfiles = profilesRes.data || []
+      allResults = resultsRes.data || []
+
+      renderSidebar()
+    }
+
+    function renderSidebar() {
+      const sidebar = document.getElementById('sections-sidebar')
+
+      if (allSections.length === 0) {
+        sidebar.innerHTML = '<div style="padding:12px 16px; font-size:13px; color:rgba(255,255,255,0.4);">Разделов нет</div>'
+        return
+      }
+
+      sidebar.innerHTML = allSections.map(s => `
+        <button class="group-section-btn ${currentSectionId === s.id ? 'active' : ''}"
+          onclick="selectSection('${s.id}')">
+          📁 ${s.title}
+        </button>`).join('')
+
+      if (isTeacher) {
+        const groups = [...new Set(allProfiles.map(p => p.group).filter(Boolean))]
+        sidebar.innerHTML += `
+          <div class="group-sidebar-divider"></div>
+          <div class="group-sidebar-title">Группа</div>
+          ${groups.map(g => `
+            <button class="group-section-btn ${viewingGroup === g ? 'active' : ''}"
+              onclick="selectGroup('${g}')">
+              👥 ${g}
+            </button>`).join('')}`
+      }
+    }
+
+    function selectSection(sectionId) {
+      currentSectionId = sectionId
+      renderSidebar()
+      renderTable()
+    }
+
+    function selectGroup(group) {
+      viewingGroup = group
+      renderSidebar()
+      if (currentSectionId) renderTable()
+    }
+
+    function renderTable() {
+      if (!currentSectionId) return
+
+      const section = allSections.find(s => s.id === currentSectionId)
+      const sectionLectures = allLectures.filter(l => l.section_id === currentSectionId)
+      const totalLectures = allLectures.length
+      const students = allProfiles.filter(p => p.group === viewingGroup)
+      const content = document.getElementById('group-content')
+
+      if (students.length === 0) {
+        content.innerHTML = `
+          <div class="group-header">
+            <div class="group-title">${section?.title || ''}</div>
+            <div class="group-badge">${viewingGroup}</div>
+          </div>
+          <div class="group-empty">
+            <div class="group-empty-icon">👤</div>
+            <div class="group-empty-text">В этой группе нет студентов</div>
+          </div>`
+        return
+      }
+
+      if (sectionLectures.length === 0) {
+        content.innerHTML = `
+          <div class="group-header">
+            <div class="group-title">${section?.title || ''}</div>
+            <div class="group-badge">${viewingGroup}</div>
+          </div>
+          <div class="group-empty">
+            <div class="group-empty-icon">📭</div>
+            <div class="group-empty-text">В этом разделе нет лекций</div>
+          </div>`
+        return
+      }
+
+      const rows = students.map(student => {
+        let totalPercent = 0
+
+        const cells = sectionLectures.map(lecture => {
+          const result = allResults.find(r => r.user_id === student.id && r.lecture_id === lecture.id)
+          if (result) {
+            totalPercent += result.percent
+            return `<td class="grade-cell has-grade">${result.percent}%</td>`
+          }
+          return `<td class="grade-cell no-grade">—</td>`
+        })
+
+        const finalScore = totalLectures > 0
+          ? Math.round((totalPercent / totalLectures) * 10) / 10
+          : 0
+
+        const totalClass = finalScore >= 70 ? 'high' : finalScore >= 40 ? 'mid' : 'low'
+        const isMe = student.id === currentUser.id
+
+        return `
+          <tr>
+            <td>
+              <div class="student-name-cell">
+                <img class="student-avatar"
+                  src="${student.profile_avatar || 'icons/profile-default.png'}"
+                  alt="${student.name}">
+                ${student.name}
+                ${isMe ? '<span class="me-badge">Я</span>' : ''}
+              </div>
+            </td>
+            ${cells.join('')}
+            <td class="grade-cell grade-total ${totalClass}">${finalScore}%</td>
+          </tr>`
+      })
+
+      content.innerHTML = `
+        <div class="group-header">
+          <div class="group-title">${section?.title || ''}</div>
+          <div class="group-badge">${viewingGroup} · ${students.length} чел.</div>
+        </div>
+        <div class="grades-table-wrap">
+          <table class="grades-table">
+            <thead>
+              <tr>
+                <th>Студент</th>
+                ${sectionLectures.map(l => `<th>${l.title}</th>`).join('')}
+                <th>Итог</th>
+              </tr>
+            </thead>
+            <tbody>${rows.join('')}</tbody>
+          </table>
+        </div>
+        <div style="font-size:12px; color:#94a3b8;">
+          * Итог = сумма процентов ÷ ${totalLectures} (всего лекций)
+        </div>`
+    }
+
+    function openTeacherModal() {
+      if (isTeacher) {
+        isTeacher = false
+        viewingGroup = currentUser.group
+        currentSectionId = null
+        document.getElementById('teacher-btn').classList.remove('active')
+        document.getElementById('teacher-btn').textContent = '🔑 Преподаватель'
+        renderSidebar()
+        document.getElementById('group-content').innerHTML = `
+          <div class="group-empty">
+            <div class="group-empty-icon">👥</div>
+            <div class="group-empty-text">Выбери раздел слева</div>
+          </div>`
+        return
+      }
+      document.getElementById('teacher-modal').classList.add('active')
+      document.getElementById('teacher-password-input').value = ''
+      document.getElementById('teacher-modal-err').textContent = ''
+      setTimeout(() => document.getElementById('teacher-password-input').focus(), 100)
+    }
+
+    function closeTeacherModal() {
+      document.getElementById('teacher-modal').classList.remove('active')
+    }
+
+    function checkPassword() {
+      const input = document.getElementById('teacher-password-input').value
+      const err = document.getElementById('teacher-modal-err')
+
+      if (!teacherPassword) {
+        err.textContent = 'Пароль не загружен. Проверь bucket "config".'
+        return
+      }
+
+      if (input === teacherPassword) {
+        isTeacher = true
+        closeTeacherModal()
+        document.getElementById('teacher-btn').classList.add('active')
+        document.getElementById('teacher-btn').textContent = '✅ Режим преподавателя'
+        renderSidebar()
+      } else {
+        err.textContent = 'Неверный пароль'
+        document.getElementById('teacher-password-input').value = ''
+        document.getElementById('teacher-password-input').focus()
+      }
+    }
+
+    function toggleDropdown(e) {
+      e.stopPropagation()
+      document.getElementById('profile-btn').classList.toggle('open')
+    }
+
+    document.addEventListener('click', function(e) {
+      const profile = document.getElementById('profile-btn')
+      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+
+      const modal = document.getElementById('teacher-modal')
+      if (modal.classList.contains('active') && e.target === modal) closeTeacherModal()
+    })
+
+    async function logout() {
+      await client.auth.signOut()
+      window.location.href = 'index.html'
+    }
+
+    init()
+  </script>
+
+</body>
+</html>
