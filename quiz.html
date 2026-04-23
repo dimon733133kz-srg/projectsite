@@ -44,7 +44,6 @@
 
   <main>
     <div class="quiz-page-layout" id="quiz-page-layout">
-      <!-- Контент рендерится через JS -->
     </div>
   </main>
 
@@ -107,10 +106,21 @@
       if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
 
       if (data.profile_bg) {
-        const btn = document.getElementById('profile-btn')
-        btn.style.backgroundImage = `url('${data.profile_bg}')`
-        btn.classList.add('has-bg')
-      }
+  const btn = document.getElementById('profile-btn')
+  btn.style.backgroundImage = `url('${data.profile_bg}')`
+
+  const img = document.createElement('img')
+  img.src = data.profile_bg
+  img.style.position = 'absolute'
+  img.style.inset = '0'
+  img.style.width = '100%'
+  img.style.height = '100%'
+  img.style.objectFit = 'contain'
+  img.style.zIndex = '0'
+
+  btn.appendChild(img)
+  btn.classList.add('has-bg')
+}
 
       try {
         const res = await fetch(QUESTIONS_URL)
@@ -123,7 +133,6 @@
       showSetup()
     }
 
-    // ===== ЭКРАН НАСТРОЙКИ =====
     function showSetup() {
       const layout = document.getElementById('quiz-page-layout')
       layout.innerHTML = `
@@ -186,7 +195,6 @@
       showQuestion()
     }
 
-    // ===== ВОПРОС =====
     function showQuestion() {
       clearInterval(quizTimer)
 
