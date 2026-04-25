@@ -1951,3 +1951,65 @@ textarea.code-editor {
   .group-content { padding: 16px; }
   .grades-table th, .grades-table td { padding: 8px 10px; font-size: 12px; }
 }
+
+/* опять темная тема ска */
+body.dark .quiz-setup-opt {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.dark .quiz-game-option {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.dark .quiz-game-option:hover {
+  background: #1e3a5f;
+  border-color: var(--border-focus);
+  color: var(--text);
+}
+
+body.dark .quiz-option {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.dark .lb-sort-btn {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.dark .category-btn {
+  color: var(--text);
+}
+
+body.dark .category-btn:hover {
+  background: #1e3a5f;
+  color: var(--text);
+}
+
+body.dark .item-name { color: var(--text); }
+body.dark .item-price { color: var(--text); }
+body.dark .item-card { border-color: var(--border); }
+
+body.dark .grades-table td { color: var(--text); border-bottom-color: var(--border); }
+body.dark .grades-table tr:hover td { background: #1e293b; }
+
+body.dark .section-toggle { color: var(--text); }
+body.dark .section-toggle:hover { background: #1e3a5f; }
+body.dark .lecture-btn { color: #94a3b8; }
+body.dark .lecture-btn:hover { background: #1e3a5f; color: var(--text); }
+body.dark .lecture-btn.active { background: #1e3a5f; color: var(--text); }
+
+body.dark .compiler-topbar { border-bottom-color: var(--border); }
+body.dark .editor-label { background: var(--bg); color: var(--text-secondary); border-bottom-color: var(--border); }
+body.dark .console-label { background: var(--bg); color: var(--text-secondary); border-bottom-color: var(--border); }
+
+body.dark .modal-box { background: var(--bg-card); }
+body.dark .modal-title { color: var(--text); }
+body.dark .modal-box input { background: var(--bg-input); color: var(--text); border-color: var(--border); }
+body.dark .modal-box select { background: var(--bg-input); color: var(--text); border-color: var(--border); }
