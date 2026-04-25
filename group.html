@@ -223,7 +223,7 @@
 
       const section = allSections.find(s => s.id === currentSectionId)
       const sectionLectures = allLectures.filter(l => l.section_id === currentSectionId)
-      const totalLectures = allLectures.length
+      const totalLectures = sectionLectures.length
       const students = allProfiles.filter(p => p.group === viewingGroup)
       const content = document.getElementById('group-content')
 
