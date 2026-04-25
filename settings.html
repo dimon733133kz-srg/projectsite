@@ -111,14 +111,14 @@
     </div>
 
     <div class="header-right">
-      <div class="stat-badge wins">
-        <img src="icons/wins.png" alt="Победы">
-        <span id="wins-count">0</span>
-      </div>
-      <div class="stat-badge streak">
-        <img src="icons/streak.png" alt="Стрик">
-        <span id="streak-count">0</span>
-      </div>
+      <div class="stat-badge wins" onclick="this.classList.toggle('show-count')">
+  <img src="icons/wins.png" alt="Победы">
+  <span id="wins-count">0</span>
+</div>
+<div class="stat-badge streak" onclick="this.classList.toggle('show-count')">
+  <img src="icons/streak.png" alt="Стрик">
+  <span id="streak-count">0</span>
+</div>
 
       <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
         <div class="profile-icon">
