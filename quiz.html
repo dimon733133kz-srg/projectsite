@@ -34,7 +34,7 @@
         <span class="profile-arrow">▼</span>
 
         <div class="dropdown">
-          <a href="#">⚙️ Настройки</a>
+          <a href="settings.html">⚙️ Настройки</a>
           <div class="divider"></div>
           <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
         </div>
@@ -63,6 +63,10 @@
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark')
+    }  
 
     let currentUserId = null
     let currentMoney = 0
