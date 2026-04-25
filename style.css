@@ -2087,3 +2087,30 @@ body.dark .empty-state { color: var(--text-secondary); }
 body.dark .group-empty-text { color: var(--text-secondary); }
 body.dark .lecture-placeholder-text { color: var(--text-secondary); }
 
+body.dark .card {
+  background: #c8a800;
+  color: #1a1a1a;
+}
+
+body.dark .card:hover {
+  background: #e6c200;
+}
+
+body.dark .card-title { color: #1a1a1a; }
+body.dark .card-desc { color: rgba(0,0,0,0.6); }
+
+body.dark .game-card {
+  background: #c8a800;
+  color: #1a1a1a;
+}
+
+body.dark .game-card:hover { background: #e6c200; }
+body.dark .game-card-title { color: #1a1a1a; }
+body.dark .game-card-desc { color: rgba(0,0,0,0.6); }
+
+@media (max-width: 700px) {
+  .stat-badge span { display: none; }
+  .stat-badge.show-count span { display: inline; }
+
+  .leader-stats .stat-badge span { display: inline !important; }
+}
