@@ -6,6 +6,40 @@
   <title>Вход</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .group-select-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .group-select-row select {
+      flex: 1;
+    }
+
+    .group-year-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .group-year-wrap input {
+      width: 72px;
+      text-align: center;
+    }
+
+    .group-preview {
+      font-size: 12px;
+      color: var(--text-secondary, #64748b);
+      text-align: center;
+      margin-top: -6px;
+    }
+
+    .group-preview span {
+      font-weight: 700;
+      color: var(--header-bg, #2196F3);
+    }
+  </style>
 </head>
 <body>
 
@@ -26,12 +60,22 @@
       <input type="text" id="reg-name" placeholder="Например: Дмитрий Иванов">
 
       <label>Группа</label>
-      <select id="reg-group">
-        <option value="" disabled selected>Выбери группу</option>
-        <option value="9-1ПО24">9-1ПО24</option>
-        <option value="9-2ПО24">9-2ПО24</option>
-        <option value="9-3ПО24">9-3ПО24</option>
-      </select>
+      <div class="group-select-row">
+        <select id="reg-group-prefix" onchange="updateGroupPreview()">
+          <option value="" disabled selected>Выбери тип</option>
+          <option value="9-1PO">9-1PO</option>
+          <option value="9-2PO">9-2PO</option>
+          <option value="9-3PO">9-3PO</option>
+          <option value="9-1POIS">9-1POIS</option>
+          <option value="9-2POIS">9-2POIS</option>
+          <option value="9-3POIS">9-3POIS</option>
+        </select>
+        <div class="group-year-wrap">
+          <input type="number" id="reg-group-year" placeholder="24" min="20" max="30"
+            oninput="updateGroupPreview()">
+        </div>
+      </div>
+      <div class="group-preview" id="group-preview">Группа: <span>—</span></div>
 
       <label>Email</label>
       <input type="email" id="reg-email" placeholder="email@example.com">
@@ -71,10 +115,13 @@
       <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
       <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
     </div>
-    <div>©2026 Все права Защищены.</div>
+    <div>©2026 Все права защищены.</div>
   </footer>
 
   <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark')
+    }
 
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
@@ -84,9 +131,27 @@
 
     window.onload = async () => {
       const { data: { session } } = await client.auth.getSession()
-      if (session) {
-        window.location.href = 'main.html'
+      if (session) window.location.href = 'main.html'
+    }
+
+    function updateGroupPreview() {
+      const prefix = document.getElementById('reg-group-prefix').value
+      const year = document.getElementById('reg-group-year').value
+      const preview = document.getElementById('group-preview')
+
+      if (prefix && year) {
+        preview.innerHTML = `Группа: <span>${prefix}${year}</span>`
+      } else if (prefix) {
+        preview.innerHTML = `Группа: <span>${prefix}__</span>`
+      } else {
+        preview.innerHTML = `Группа: <span>—</span>`
       }
+    }
+
+    function getGroupValue() {
+      const prefix = document.getElementById('reg-group-prefix').value
+      const year = parseInt(document.getElementById('reg-group-year').value)
+      return { prefix, year }
     }
 
     function showLogin() {
@@ -107,14 +172,21 @@
 
     async function register() {
       const name = document.getElementById('reg-name').value.trim()
-      const group = document.getElementById('reg-group').value
       const email = document.getElementById('reg-email').value.trim()
       const password = document.getElementById('reg-password').value
+      const { prefix, year } = getGroupValue()
 
-      if (!name || !group || !email || !password) {
+      if (!name || !prefix || !year || !email || !password) {
         setMessage('reg-message', 'Заполни все поля!')
         return
       }
+
+      if (year < 20 || year > 30) {
+        setMessage('reg-message', 'Год группы должен быть от 20 до 30!')
+        return
+      }
+
+      const group = `${prefix}${year}`
 
       const { data, error } = await client.auth.signUp({ email, password })
 
@@ -125,14 +197,14 @@
 
       const { error: profileError } = await client
         .from('profiles')
-        .insert({ id: data.user.id, name: name, group: group })
+        .insert({ id: data.user.id, name, group })
 
       if (profileError) {
         setMessage('reg-message', 'Ошибка профиля: ' + profileError.message)
         return
       }
 
-      setMessage('reg-message', '✅ Проверь почту — отправили письмо для подтверждения!', true)
+      setMessage('reg-message', '✅ Регистрация успешна!.', true)
     }
 
     async function login() {
