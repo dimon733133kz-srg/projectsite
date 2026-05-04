@@ -6,40 +6,6 @@
   <title>Вход</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    .group-select-row {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-    }
-
-    .group-select-row select {
-      flex: 1;
-    }
-
-    .group-year-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .group-year-wrap input {
-      width: 72px;
-      text-align: center;
-    }
-
-    .group-preview {
-      font-size: 12px;
-      color: var(--text-secondary, #64748b);
-      text-align: center;
-      margin-top: -6px;
-    }
-
-    .group-preview span {
-      font-weight: 700;
-      color: var(--header-bg, #2196F3);
-    }
-  </style>
 </head>
 <body>
 
@@ -53,6 +19,7 @@
 
   <div class="auth-wrapper">
 
+    <!-- ФОРМА РЕГИСТРАЦИИ -->
     <div class="auth-box" id="register-form">
       <h1>Регистрация</h1>
 
@@ -91,6 +58,7 @@
       </div>
     </div>
 
+    <!-- ФОРМА ВХОДА -->
     <div class="auth-box" id="login-form" style="display: none;">
       <h1>Вход</h1>
 
@@ -100,11 +68,30 @@
       <label>Пароль</label>
       <input type="password" id="login-password" placeholder="Пароль">
 
+      <div class="forgot-link">
+        <a href="#" onclick="showForgot()">Забыли пароль?</a>
+      </div>
+
       <button onclick="login()">Войти</button>
       <p class="auth-message" id="login-message"></p>
 
       <div class="switch-link">
         Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a>
+      </div>
+    </div>
+
+    <!-- ФОРМА ВОССТАНОВЛЕНИЯ ПАРОЛЯ -->
+    <div class="auth-box" id="forgot-form" style="display: none;">
+      <h1>Восстановление пароля</h1>
+
+      <label>Email</label>
+      <input type="email" id="forgot-email" placeholder="email@example.com">
+
+      <button onclick="sendReset()">Отправить письмо</button>
+      <p class="auth-message" id="forgot-message"></p>
+
+      <div class="switch-link">
+        <a href="#" onclick="showLogin()">← Назад ко входу</a>
       </div>
     </div>
 
@@ -129,9 +116,37 @@
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+    // Сохранённые данные регистрации — вставим в profiles после подтверждения email
+    let pendingProfile = null
+
     window.onload = async () => {
       const { data: { session } } = await client.auth.getSession()
-      if (session) window.location.href = 'main.html'
+
+      // Если пришли по ссылке подтверждения — сессия уже создана
+      if (session) {
+        // Проверяем есть ли профиль — если нет, создаём из pendingProfile
+        const { data: profile } = await client
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!profile) {
+          // Пробуем достать сохранённые данные из localStorage
+          const saved = localStorage.getItem('pendingProfile')
+          if (saved) {
+            const p = JSON.parse(saved)
+            await client.from('profiles').insert({
+              id: session.user.id,
+              name: p.name,
+              group: p.group
+            })
+            localStorage.removeItem('pendingProfile')
+          }
+        }
+
+        window.location.href = 'main.html'
+      }
     }
 
     function updateGroupPreview() {
@@ -148,20 +163,21 @@
       }
     }
 
-    function getGroupValue() {
-      const prefix = document.getElementById('reg-group-prefix').value
-      const year = parseInt(document.getElementById('reg-group-year').value)
-      return { prefix, year }
-    }
-
     function showLogin() {
       document.getElementById('register-form').style.display = 'none'
+      document.getElementById('forgot-form').style.display = 'none'
       document.getElementById('login-form').style.display = 'block'
     }
 
     function showRegister() {
       document.getElementById('login-form').style.display = 'none'
+      document.getElementById('forgot-form').style.display = 'none'
       document.getElementById('register-form').style.display = 'block'
+    }
+
+    function showForgot() {
+      document.getElementById('login-form').style.display = 'none'
+      document.getElementById('forgot-form').style.display = 'block'
     }
 
     function setMessage(id, text, isSuccess = false) {
@@ -174,37 +190,39 @@
       const name = document.getElementById('reg-name').value.trim()
       const email = document.getElementById('reg-email').value.trim()
       const password = document.getElementById('reg-password').value
-      const { prefix, year } = getGroupValue()
+      const prefix = document.getElementById('reg-group-prefix').value
+      const yearVal = parseInt(document.getElementById('reg-group-year').value)
 
-      if (!name || !prefix || !year || !email || !password) {
+      if (!name || !prefix || !yearVal || !email || !password) {
         setMessage('reg-message', 'Заполни все поля!')
         return
       }
 
-      if (year < 20 || year > 30) {
+      if (yearVal < 20 || yearVal > 30) {
         setMessage('reg-message', 'Год группы должен быть от 20 до 30!')
         return
       }
 
-      const group = `${prefix}-${year}`
+      const group = `${prefix}${yearVal}`
 
-      const { data, error } = await client.auth.signUp({ email, password })
+      // Сохраняем данные профиля локально — вставим после подтверждения email
+      localStorage.setItem('pendingProfile', JSON.stringify({ name, group }))
+
+      const { error } = await client.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname
+        }
+      })
 
       if (error) {
+        localStorage.removeItem('pendingProfile')
         setMessage('reg-message', 'Ошибка: ' + error.message)
         return
       }
 
-      const { error: profileError } = await client
-        .from('profiles')
-        .insert({ id: data.user.id, name, group })
-
-      if (profileError) {
-        setMessage('reg-message', 'Ошибка профиля: ' + profileError.message)
-        return
-      }
-
-      setMessage('reg-message', '✅ Регистрация успешна!.', true)
+      setMessage('reg-message', '✅ Письмо отправлено! Подтверди email чтобы завершить регистрацию.', true)
     }
 
     async function login() {
@@ -216,14 +234,41 @@
         return
       }
 
-      const { error } = await client.auth.signInWithPassword({ email, password })
+      const { data, error } = await client.auth.signInWithPassword({ email, password })
 
       if (error) {
         setMessage('login-message', 'Ошибка: ' + error.message)
         return
       }
 
+      // Проверяем подтверждён ли email
+      if (!data.user.email_confirmed_at) {
+        await client.auth.signOut()
+        setMessage('login-message', 'Сначала подтверди email — проверь почту!')
+        return
+      }
+
       window.location.href = 'main.html'
+    }
+
+    async function sendReset() {
+      const email = document.getElementById('forgot-email').value.trim()
+
+      if (!email) {
+        setMessage('forgot-message', 'Введи email!')
+        return
+      }
+
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset.html'
+      })
+
+      if (error) {
+        setMessage('forgot-message', 'Ошибка: ' + error.message)
+        return
+      }
+
+      setMessage('forgot-message', '✅ Письмо отправлено! Проверь почту.', true)
     }
   </script>
 

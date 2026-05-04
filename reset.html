@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Новый пароль</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <a href="main.html">
+        <img src="logo.png" alt="Логотип">
+      </a>
+    </div>
+  </header>
+
+  <div class="auth-wrapper">
+    <div class="auth-box" id="reset-box">
+      <h1>Новый пароль</h1>
+
+      <label>Новый пароль</label>
+      <input type="password" id="new-password" placeholder="Минимум 6 символов">
+
+      <label>Повтори пароль</label>
+      <input type="password" id="confirm-password" placeholder="Повтори пароль">
+
+      <button onclick="resetPassword()">Сохранить пароль</button>
+      <p class="auth-message" id="reset-message"></p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="credits">
+      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
+      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
+    </div>
+    <div>©2026 Все права защищены.</div>
+  </footer>
+
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark')
+    }
+
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    function setMessage(text, isSuccess = false) {
+      const el = document.getElementById('reset-message')
+      el.textContent = text
+      el.className = 'auth-message' + (isSuccess ? ' success' : '')
+    }
+
+    async function resetPassword() {
+      const newPass = document.getElementById('new-password').value
+      const confirm = document.getElementById('confirm-password').value
+
+      if (!newPass || !confirm) {
+        setMessage('Заполни оба поля!')
+        return
+      }
+
+      if (newPass.length < 6) {
+        setMessage('Пароль должен быть минимум 6 символов!')
+        return
+      }
+
+      if (newPass !== confirm) {
+        setMessage('Пароли не совпадают!')
+        return
+      }
+
+      const { error } = await client.auth.updateUser({ password: newPass })
+
+      if (error) {
+        setMessage('Ошибка: ' + error.message)
+        return
+      }
+
+      setMessage('✅ Пароль изменён! Перенаправляем...', true)
+      setTimeout(() => window.location.href = 'index.html', 2000)
+    }
+  </script>
+
+</body>
+</html>
