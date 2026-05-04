@@ -2133,3 +2133,53 @@ body.dark .quiz-result-btn { background: #FDD835; color: #1a1a1a; }
 
   .leader-stats .stat-badge span { display: inline !important; }
 }
+
+.group-select-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.group-select-row select {
+  flex: 1;
+}
+
+.group-year-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-year-wrap input {
+  width: 72px;
+  text-align: center;
+}
+
+.group-preview {
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  text-align: center;
+  margin-top: -6px;
+}
+
+.group-preview span {
+  font-weight: 700;
+  color: var(--header-bg, #2196F3);
+}
+
+.forgot-link {
+  text-align: right;
+  font-size: 12px;
+  margin-top: -4px;
+}
+
+.forgot-link a {
+  color: var(--header-bg, #2196F3);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.forgot-link a:hover {
+  text-decoration: underline;
+}
+
