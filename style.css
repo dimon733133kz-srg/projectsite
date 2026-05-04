@@ -2183,3 +2183,7 @@ body.dark .quiz-result-btn { background: #FDD835; color: #1a1a1a; }
   text-decoration: underline;
 }
 
+body.dark .forgot-link a {
+  color: #60a5fa;
+}
+
