@@ -128,17 +128,17 @@ async function init() {
   activeBg = data.profile_bg ?? null
   activeAvatar = data.profile_avatar ?? null
 
-  document.getElementById('profile-name').textContent = data.name
-  document.getElementById('user-money').textContent = data.money ?? 0
-  document.getElementById('wins-count').textContent = data.wins ?? 0
-  document.getElementById('streak-count').textContent = data.win_streak ?? 0
+  document.getElementById('profile-name').textContent = data.name;
+  document.getElementById('user-money').textContent = data.money ?? 0;
+  document.getElementById('wins-count').textContent = data.wins ?? 0;
+  document.getElementById('streak-count').textContent = data.win_streak ?? 0;
 
   if (data.profile_avatar) {
     document.getElementById('profile-avatar-img').src = data.profile_avatar
   }
 
   if (data.profile_bg) {
-    updateProfileBgDisplay(data.profile_bg)
+    updateProfileBgDisplay(data.profile_bg);
   }
 
   await loadOwned()
@@ -146,25 +146,30 @@ async function init() {
 }
 
 function updateProfileBgDisplay(url) {
-  const btn = document.getElementById('profile-btn')
-  // Очищаем старые картинки фонов если есть
-  const oldImg = btn.querySelector('.bg-layer')
-  if (oldImg) oldImg.remove()
+  const btn = document.getElementById('profile-btn');
+  if (!btn) return;
+
+  const existingImgs = btn.querySelectorAll('img:not(#profile-avatar-img)');
+  existingImgs.forEach(el => el.remove());
 
   if (url) {
-    const img = document.createElement('img')
-    img.src = url
-    img.className = 'bg-layer'
-    img.style.position = 'absolute'
-    img.style.inset = '0'
-    img.style.width = '100%'
-    img.style.height = '100%'
-    img.style.objectFit = 'cover'
-    img.style.zIndex = '0'
-    btn.appendChild(img)
-    btn.classList.add('has-bg')
+    btn.style.backgroundImage = `url('${url}')`;
+    btn.style.backgroundSize = 'cover';
+    btn.style.backgroundPosition = 'center';
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.position = 'absolute';
+    img.style.inset = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain'; 
+    img.style.zIndex = '0';
+    
+    btn.appendChild(img);
+    btn.classList.add('has-bg');
   } else {
-    btn.classList.remove('has-bg')
+    btn.style.backgroundImage = '';
+    btn.classList.remove('has-bg');
   }
 }
 
