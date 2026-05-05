@@ -95,125 +95,134 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+    cКонечно. Я собрал все твои функции воедино, исправил синтаксические ошибки с кавычками, убрал лишние дубликаты и "вылетевший" из функций код, который и вызывал ошибку await.
 
-    const { createClient } = supabase
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+Просто замени всё содержимое между тегами <script> и </script> на этот код:
+JavaScript
 
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }  
+const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
-    let currentUser = null
-    let currentMode = 'buy'
-    let currentCategory = 'background'
-    let ownedIds = []
-    let activeBg = null
-    let activeAvatar = null
+const { createClient } = supabase
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    async function init() {
-      const { data: { session } } = await client.auth.getSession()
-      if (!session) { window.location.href = 'index.html'; return }
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark')
+}
 
-      const { data, error } = await client
-        .from('profiles')
-        .select('name, money, profile_bg, profile_avatar, wins, win_streak')
-        .eq('id', session.user.id)
-        .single()
+let currentUser = null
+let currentMode = 'buy'
+let currentCategory = 'background'
+let ownedIds = []
+let activeBg = null
+let activeAvatar = null
 
-      if (error || !data) { window.location.href = 'index.html'; return }
+async function init() {
+  const { data: { session } } = await client.auth.getSession()
+  if (!session) { window.location.href = 'index.html'; return }
 
-      currentUser = session.user
-      activeBg = data.profile_bg ?? null
-      activeAvatar = data.profile_avatar ?? null
+  const { data, error } = await client
+    .from('profiles')
+    .select('name, money, profile_bg, profile_avatar, wins, win_streak')
+    .eq('id', session.user.id)
+    .single()
 
-      document.getElementById('profile-name').textContent = data.name
-      document.getElementById('user-money').textContent = data.money ?? 0
-      document.getElementById('wins-count').textContent = data.wins ?? 0
-      document.getElementById('streak-count').textContent = data.win_streak ?? 0
+  if (error || !data) { window.location.href = 'index.html'; return }
 
-      if (data.profile_avatar) {
-        document.getElementById('profile-avatar-img').src = data.profile_avatar
-      }
+  currentUser = session.user
+  activeBg = data.profile_bg ?? null
+  activeAvatar = data.profile_avatar ?? null
 
-      if (data.profile_bg) {
-        const btn = document.getElementById('profile-btn')
-        btn.style.backgroundImage = `url('${data.profile_bg}')`
+  document.getElementById('profile-name').textContent = data.name
+  document.getElementById('user-money').textContent = data.money ?? 0
+  document.getElementById('wins-count').textContent = data.wins ?? 0
+  document.getElementById('streak-count').textContent = data.win_streak ?? 0
 
-const img = document.createElement('img')
-img.src = data.profile_bg
-img.style.position = 'absolute'
-img.style.inset = '0'
-img.style.width = '100%'
-img.style.height = '100%'
-img.style.objectFit = 'contain'
-img.style.zIndex = '0'
-
-btn.appendChild(img)
-
-        btn.classList.add('has-bg')
-      }
-
-      await loadOwned()
-      await loadItems()
-    }
-
-    async function loadOwned() {
-      const { data } = await client
-        .from('owned_avatars')
-        .select('item_id, type')
-        .eq('user_id', currentUser.id)
-
-      ownedIds = data ? data.map(d => d.item_id) : []
-    }
-
-    function setMode(mode) {
-      currentMode = mode
-      document.getElementById('btn-buy').classList.toggle('active', mode === 'buy')
-      document.getElementById('btn-inventory').classList.toggle('active', mode === 'inventory')
-      updateTitle()
-      loadItems()
-    }
-
-    function setCategory(category, btn) {
-      currentCategory = category
-      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-      updateTitle()
-      loadItems()
-    }
-
-    function updateTitle() {
-      const modeLabel = currentMode === 'buy' ? 'Купить' : 'Инвентарь'
-      const catLabel = currentCategory === 'background' ? 'Фон профиля' : 'Фото профиля'
-      document.getElementById('shop-title').textContent = `${modeLabel} — ${catLabel}`
-    }
-
-    async function loadItems() {
-      if (currentMode === 'buy') await loadShopItems()
-      else await loadInventory()
-    }
-
-async function loadShopItems() {
-  const grid = document.getElementById('items-grid');
-  grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>';
-
-  const { data: cases, error } = await client.from('cases').select('*');
-
-  if (error || !cases || cases.length === 0) {
-    grid.innerHTML = `<div class="empty-state">Нет кейсов</div>`;
-    return;
+  if (data.profile_avatar) {
+    document.getElementById('profile-avatar-img').src = data.profile_avatar
   }
 
-  grid.innerHTML = '';
+  if (data.profile_bg) {
+    updateProfileBgDisplay(data.profile_bg)
+  }
 
+  await loadOwned()
+  await loadItems()
+}
+
+function updateProfileBgDisplay(url) {
+  const btn = document.getElementById('profile-btn')
+  // Очищаем старые картинки фонов если есть
+  const oldImg = btn.querySelector('.bg-layer')
+  if (oldImg) oldImg.remove()
+
+  if (url) {
+    const img = document.createElement('img')
+    img.src = url
+    img.className = 'bg-layer'
+    img.style.position = 'absolute'
+    img.style.inset = '0'
+    img.style.width = '100%'
+    img.style.height = '100%'
+    img.style.objectFit = 'cover'
+    img.style.zIndex = '0'
+    btn.appendChild(img)
+    btn.classList.add('has-bg')
+  } else {
+    btn.classList.remove('has-bg')
+  }
+}
+
+async function loadOwned() {
+  const { data } = await client
+    .from('owned_avatars')
+    .select('item_id')
+    .eq('user_id', currentUser.id)
+  ownedIds = data ? data.map(d => d.item_id) : []
+}
+
+function setMode(mode) {
+  currentMode = mode
+  document.getElementById('btn-buy').classList.toggle('active', mode === 'buy')
+  document.getElementById('btn-inventory').classList.toggle('active', mode === 'inventory')
+  updateTitle()
+  loadItems()
+}
+
+function setCategory(category, btn) {
+  currentCategory = category
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  updateTitle()
+  loadItems()
+}
+
+function updateTitle() {
+  const modeLabel = currentMode === 'buy' ? 'Купить' : 'Инвентарь'
+  const catLabel = currentCategory === 'background' ? 'Фон профиля' : 'Фото профиля'
+  document.getElementById('shop-title').textContent = `${modeLabel} — ${catLabel}`
+}
+
+async function loadItems() {
+  if (currentMode === 'buy') await loadShopItems()
+  else await loadInventory()
+}
+
+async function loadShopItems() {
+  const grid = document.getElementById('items-grid')
+  grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
+
+  const { data: cases, error } = await client.from('cases').select('*')
+
+  if (error || !cases || cases.length === 0) {
+    grid.innerHTML = `<div class="empty-state">Нет доступных кейсов</div>`
+    return
+  }
+
+  grid.innerHTML = ''
   for (const c of cases) {
-    const { data: items } = await client.from('shop_items').select('*').eq('case_id', c.id);
-    if (!items || items.length === 0) continue;
-
-    const matches = items.some(i => i.type === currentCategory);
-    if (!matches) continue;
+    const { data: items } = await client.from('shop_items').select('*').eq('case_id', c.id)
+    if (!items || !items.some(i => i.type === currentCategory)) continue
 
     grid.innerHTML += `
       <div class="item-card">
@@ -223,281 +232,209 @@ async function loadShopItems() {
           <div class="item-price"><span class="item-price-coin">🪙</span> ${c.price}</div>
           <div style="display:flex;gap:6px">
             <button class="item-btn" onclick="openCasePreview('${c.id}')">?</button>
-            <button class="item-btn buy" onclick="openCase('${c.id}')">Открыть</button>
+            <button class="item-btn buy" onclick="handleOpenCase('${c.id}', ${c.price})">Открыть</button>
           </div>
         </div>
-      </div>`;
+      </div>`
   }
 }
 
-      const { data, error } = await client
-        .from('shop_items')
-        .select('*')
-        .eq('type', currentCategory)
+async function loadInventory() {
+  const grid = document.getElementById('items-grid')
+  grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
 
-      if (error || !data || data.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-text">Товаров пока нет</div></div>`
-        return
-      }
+  const { data: ownedData } = await client
+    .from('owned_avatars')
+    .select('item_id')
+    .eq('user_id', currentUser.id)
+    .eq('type', currentCategory)
 
-      grid.innerHTML = ''
-      data.forEach(item => {
-        const owned = ownedIds.includes(item.id)
-        grid.innerHTML += `
-          <div class="item-card">
-            ${item.image_url ? `<img class="item-img" src="${item.image_url}" alt="${item.name}">` : `<div class="item-img-placeholder">🖼️</div>`}
-            <div class="item-info">
-              <div class="item-name">${item.name}</div>
-              <div class="item-price"><span class="item-price-coin">🪙</span> ${item.price}</div>
-              ${owned
-                ? `<button class="item-btn owned" disabled>✅ Куплено</button>`
-                : `<button class="item-btn buy" onclick="buyItem('${item.id}', ${item.price}, '${item.name}', '${item.image_url}', '${item.type}')">Купить</button>`}
-            </div>
-          </div>`
-      })
-    }
+  const ownedOfType = ownedData ? ownedData.map(d => d.item_id) : []
 
-    async function loadInventory() {
-      const grid = document.getElementById('items-grid')
-      grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
+  if (ownedOfType.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎒</div><div class="empty-state-text">Инвентарь пуст</div></div>`
+    return
+  }
 
-      const { data: ownedData } = await client
-        .from('owned_avatars')
-        .select('item_id')
-        .eq('user_id', currentUser.id)
-        .eq('type', currentCategory)
+  const { data, error } = await client.from('shop_items').select('*').in('id', ownedOfType)
+  if (error || !data) { grid.innerHTML = 'Ошибка загрузки'; return }
 
-      const ownedOfType = ownedData ? ownedData.map(d => d.item_id) : []
-
-      if (ownedOfType.length === 0) {
-        grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎒</div><div class="empty-state-text">Инвентарь пуст — купи что-нибудь!</div></div>`
-        return
-      }
-
-      const { data, error } = await client
-        .from('shop_items')
-        .select('*')
-        .in('id', ownedOfType)
-
-      if (error || !data) {
-        grid.innerHTML = '<p style="color:#dc2626;padding:20px">Ошибка загрузки</p>'
-        return
-      }
-
-      grid.innerHTML = ''
-      data.forEach(item => {
-        const isEquipped = currentCategory === 'background'
-          ? activeBg === item.image_url
-          : activeAvatar === item.image_url
-
-        grid.innerHTML += `
-          <div class="item-card">
-            ${item.image_url ? `<img class="item-img" src="${item.image_url}" alt="${item.name}">` : `<div class="item-img-placeholder">🖼️</div>`}
-            <div class="item-info">
-              <div class="item-name">${item.name}</div>
-              ${isEquipped
-                ? `
-                  <button class="item-btn equipped" disabled>✨ Активно</button>
-                  <button class="item-btn unequip" onclick="unequipItem('${item.type}')">Снять</button>
-                `
-                : `<button class="item-btn equip" onclick="equipItem('${item.image_url}', '${item.name}', '${item.type}')">Надеть</button>`}
-            </div>
-          </div>`
-      })
-    }
-
-    async function buyItem(itemId, price, itemName, imageUrl, type) {
-      const { data: profile } = await client
-        .from('profiles')
-        .select('money')
-        .eq('id', currentUser.id)
-        .single()
-
-      if (profile.money < price) { showToast('Недостаточно монет!', 'error'); return }
-
-      const { error: moneyError } = await client
-        .from('profiles')
-        .update({ money: profile.money - price })
-        .eq('id', currentUser.id)
-
-      if (moneyError) { showToast('Ошибка покупки', 'error'); return }
-
-      const { error: ownError } = await client
-        .from('owned_avatars')
-        .insert({ user_id: currentUser.id, item_id: itemId, type: type })
-
-      if (ownError) { showToast('Ошибка покупки', 'error'); return }
-
-      document.getElementById('user-money').textContent = profile.money - price
-      ownedIds.push(itemId)
-      showToast(`✅ Куплено: ${itemName}`, 'success')
-      await loadShopItems()
-    }
-
-    async function equipItem(imageUrl, itemName, type) {
-      const field = type === 'background' ? 'profile_bg' : 'profile_avatar'
-
-      const { error } = await client
-        .from('profiles')
-        .update({ [field]: imageUrl })
-        .eq('id', currentUser.id)
-
-      if (error) { showToast('Ошибка', 'error'); return }
-
-      if (type === 'background') {
-        activeBg = imageUrl
-        const btn = document.getElementById('profile-btn')
-        btn.style.backgroundImage = `url('${imageUrl}')`
-        btn.classList.add('has-bg')
-      } else {
-        activeAvatar = imageUrl
-        document.getElementById('profile-avatar-img').src = imageUrl
-      }
-
-      showToast(`✨ Активировано: ${itemName}`, 'success')
-      await loadInventory()
-    }
-
-    async function unequipItem(type) {
-      const field = type === 'background' ? 'profile_bg' : 'profile_avatar'
-
-      const { error } = await client
-        .from('profiles')
-        .update({ [field]: null })
-        .eq('id', currentUser.id)
-
-      if (error) { showToast('Ошибка', 'error'); return }
-
-      if (type === 'background') {
-        activeBg = null
-        const btn = document.getElementById('profile-btn')
-        btn.style.backgroundImage = ''
-        btn.classList.remove('has-bg')
-      } else {
-        activeAvatar = null
-        document.getElementById('profile-avatar-img').src = 'icons/profile-default.png'
-      }
-
-      showToast('Снято', 'success')
-      await loadInventory()
-    }
-
-    function showToast(msg, type = 'success') {
-      const toast = document.getElementById('toast')
-      toast.textContent = msg
-      toast.className = `toast ${type} show`
-      setTimeout(() => toast.classList.remove('show'), 3000)
-    }
-
-    function toggleDropdown(e) {
-      e.stopPropagation()
-      document.getElementById('profile-btn').classList.toggle('open')
-    }
-
-    document.addEventListener('click', function(e) {
-      const profile = document.getElementById('profile-btn')
-      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
-    })
-
-    async function logout() {
-      await client.auth.signOut()
-      window.location.href = 'index.html'
-    }
-	
-async function openCasePreview(caseId) {
-  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
-  if (!items) return;
-
-  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0);
-  let html = `<div style="background:white;padding:20px;border-radius:10px;color:black;">`;
-
-  items.forEach(i => {
-    const percent = ((i.chance || 0) / total * 100).toFixed(2);
-    html += `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <img src="${i.image_url}" width="40">
-        <span>${percent}%</span>
-      </div>`;
-  });
-
-  html += `<button onclick="closeModal()">Закрыть</button></div>`;
-  showModal(html);
+  grid.innerHTML = ''
+  data.forEach(item => {
+    const isEquipped = currentCategory === 'background' ? activeBg === item.image_url : activeAvatar === item.image_url
+    grid.innerHTML += `
+      <div class="item-card">
+        <img class="item-img" src="${item.image_url || ''}">
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          ${isEquipped 
+            ? `<button class="item-btn equipped" disabled>✨ Активно</button>
+               <button class="item-btn unequip" onclick="unequipItem('${item.type}')">Снять</button>`
+            : `<button class="item-btn equip" onclick="equipItem('${item.image_url}', '${item.name}', '${item.type}')">Надеть</button>`}
+        </div>
+      </div>`
+  })
 }
 
+async function handleOpenCase(caseId, price) {
+  const { data: profile } = await client.from('profiles').select('money').eq('id', currentUser.id).single()
+  if (profile.money < price) { showToast('Недостаточно монет!', 'error'); return }
+
+  const { error: mErr } = await client.from('profiles').update({ money: profile.money - price }).eq('id', currentUser.id)
+  if (mErr) return
+
+  document.getElementById('user-money').textContent = profile.money - price
+  
+  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId)
+  const win = rollItem(items)
+  
+  await client.from('owned_avatars').insert({ user_id: currentUser.id, item_id: win.id, type: win.type })
+  startRouletteAnimation(items, win)
+}
 
 function rollItem(items) {
-  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0);
-  const random = Math.random() * total;
-  let current = 0;
+  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0)
+  const random = Math.random() * total
+  let current = 0
   for (const item of items) {
-    current += item.chance || 0;
-    if (random <= current) return item;
+    current += (item.chance || 0)
+    if (random <= current) return item
   }
+  return items[0]
 }
 
-async function openCase(caseId) {
-  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
-  const win = rollItem(items);
-  startRouletteAnimation(items, win);
-  await client.from('owned_avatars').insert({
-    user_id: currentUser.id,
-    item_id: win.id,
-    type: win.type
-  });
+async function openCasePreview(caseId) {
+  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId)
+  if (!items) return
+  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0)
+  
+  let html = `<div style="background:var(--bg-card);padding:20px;border-radius:12px;max-width:300px;width:90%">
+    <h3 style="margin-top:0">Содержимое:</h3>`
+  items.forEach(i => {
+    const percent = ((i.chance || 0) / total * 100).toFixed(1)
+    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <img src="${i.image_url}" width="40" height="40" style="border-radius:4px;object-fit:cover">
+      <span>${i.name} (${percent}%)</span>
+    </div>`
+  })
+  html += `<button class="item-btn" style="width:100%;margin-top:10px" onclick="closeModal()">Закрыть</button></div>`
+  showModal(html)
 }
-
 
 function startRouletteAnimation(items, winItem) {
-  const container = document.createElement('div');
-  container.className = 'roulette';
-  const track = document.createElement('div');
-  track.className = 'roulette-track';
-  let elements = [];
+  const modal = document.createElement('div')
+  modal.id = 'modal'
+  modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;"
+  
+  modal.innerHTML = `
+    <div style="position:relative;width:320px;height:120px;overflow:hidden;border:2px solid #3b82f6;border-radius:8px;background:#1e293b">
+      <div id="roulette-track" style="display:flex;transition:transform 3s cubic-bezier(0.15, 0, 0.05, 1);will-change:transform;"></div>
+      <div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:red;z-index:10;transform:translateX(-50%)"></div>
+    </div>
+    <p style="margin-top:20px;color:white">Открываем кейс...</p>`
+  
+  document.body.appendChild(modal)
+  const track = document.getElementById('roulette-track')
+  
+  const elements = []
   for (let i = 0; i < 40; i++) {
-    elements.push(items[Math.floor(Math.random() * items.length)]);
+    elements.push(items[Math.floor(Math.random() * items.length)])
   }
-  elements[32] = winItem;
-  track.innerHTML = elements.map(i => `<img src="${i.image_url}" style="width:100px;height:100px;margin:5px;">`).join('');
-  container.innerHTML = `<div class="case-roulette-pointer" style="position:absolute;left:50%;top:0;width:2px;height:100%;background:red;z-index:10;"></div>`;
-  container.appendChild(track);
-  document.body.appendChild(container);
+  elements[35] = winItem
+  
+  track.innerHTML = elements.map(i => `
+    <div style="min-width:100px;height:120px;display:flex;align-items:center;justify-content:center;border-right:1px solid #334155">
+      <img src="${i.image_url}" style="width:80px;height:80px;object-fit:cover;border-radius:4px">
+    </div>`).join('')
 
   setTimeout(() => {
-    track.style.transition = "transform 3s cubic-bezier(0.1, 0, 0.1, 1)";
-    track.style.transform = `translateX(-${32 * 110}px)`;
-  }, 50);
+    track.style.transform = `translateX(-${35 * 100 - 110}px)`
+  }, 100)
 
   setTimeout(() => {
-    showWin(winItem);
-    container.remove();
-  }, 3200);
+    modal.remove()
+    showWin(winItem)
+    loadOwned()
+  }, 3500)
 }
-
 
 function showWin(item) {
   showModal(`
-    <div style="background:white;padding:20px;border-radius:10px;text-align:center;color:black;">
-      <img src="${item.image_url}" width="120">
-      <h2>${item.name}</h2>
-      <p>${item.type === 'background' ? 'Фон' : 'Аватар'}</p>
-      <button onclick="closeModal()">Закрыть</button>
-    </div>`
-  );
+    <div style="background:var(--bg-card);padding:30px;border-radius:16px;text-align:center;box-shadow:0 0 20px rgba(59,130,246,0.5)">
+      <h2 style="margin-top:0">Выпал предмет!</h2>
+      <img src="${item.image_url}" width="150" height="150" style="border-radius:8px;object-fit:cover;margin:10px 0">
+      <h3>${item.name}</h3>
+      <button class="item-btn buy" style="padding:10px 20px" onclick="closeModal()">Ура!</button>
+    </div>`)
+}
+
+async function equipItem(imageUrl, itemName, type) {
+  const field = type === 'background' ? 'profile_bg' : 'profile_avatar'
+  const { error } = await client.from('profiles').update({ [field]: imageUrl }).eq('id', currentUser.id)
+  if (error) return
+
+  if (type === 'background') {
+    activeBg = imageUrl
+    updateProfileBgDisplay(imageUrl)
+  } else {
+    activeAvatar = imageUrl
+    document.getElementById('profile-avatar-img').src = imageUrl
+  }
+  showToast(`✨ Надето: ${itemName}`)
+  loadInventory()
+}
+
+async function unequipItem(type) {
+  const field = type === 'background' ? 'profile_bg' : 'profile_avatar'
+  await client.from('profiles').update({ [field]: null }).eq('id', currentUser.id)
+  if (type === 'background') {
+    activeBg = null
+    updateProfileBgDisplay(null)
+  } else {
+    activeAvatar = null
+    document.getElementById('profile-avatar-img').src = 'icons/profile-default.png'
+  }
+  showToast('Снято')
+  loadInventory()
 }
 
 function showModal(html) {
-  const modal = document.createElement('div');
-  modal.id = 'modal';
-  modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
-  modal.innerHTML = html;
-  document.body.appendChild(modal);
+  closeModal()
+  const modal = document.createElement('div')
+  modal.id = 'modal'
+  modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;"
+  modal.innerHTML = html
+  document.body.appendChild(modal)
 }
 
 function closeModal() {
-  const m = document.getElementById('modal');
-  if (m) m.remove();
+  const m = document.getElementById('modal')
+  if (m) m.remove()
 }
-    init()
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast')
+  toast.textContent = msg
+  toast.className = `toast ${type} show`
+  setTimeout(() => toast.classList.remove('show'), 3000)
+}
+
+function toggleDropdown(e) {
+  e.stopPropagation()
+  document.getElementById('profile-btn').classList.toggle('open')
+}
+
+document.addEventListener('click', (e) => {
+  const profile = document.getElementById('profile-btn')
+  if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+})
+
+async function logout() {
+  await client.auth.signOut()
+  window.location.href = 'index.html'
+}
+
+init()
   </script>
 
 </body>
