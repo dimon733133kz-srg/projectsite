@@ -196,52 +196,40 @@ btn.appendChild(img)
     }
 
 async function loadShopItems() {
-  const grid = document.getElementById('items-grid')
-  grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
+  const grid = document.getElementById('items-grid');
+  grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>';
 
-  // грузим кейсы
-  const { data: cases, error } = await client
-    .from('cases')
-    .select('*')
+  const { data: cases, error } = await client.from('cases').select('*');
 
-  if (error  !cases  cases.length === 0) {
-    grid.innerHTML = <div class="empty-state">Нет кейсов</div>
-    return
+  if (error || !cases || cases.length === 0) {
+    grid.innerHTML = `<div class="empty-state">Нет кейсов</div>`;
+    return;
   }
 
-  grid.innerHTML = ''
+  grid.innerHTML = '';
 
   for (const c of cases) {
-    const { data: items } = await client
-      .from('shop_items')
-      .select('*')
-      .eq('case_id', c.id)
+    const { data: items } = await client.from('shop_items').select('*').eq('case_id', c.id);
+    if (!items || items.length === 0) continue;
 
-    if (!items || items.length === 0) continue
+    const matches = items.some(i => i.type === currentCategory);
+    if (!matches) continue;
 
-    // проверка категории (ВАЖНО)
-    const matches = items.some(i => i.type === currentCategory)
-    if (!matches) continue
-
-    grid.innerHTML += 
+    grid.innerHTML += `
       <div class="item-card">
-        ${c.image_url 
-          ? <img class="item-img" src="${c.image_url}">
-          : <div class="item-img-placeholder">📦</div>}
-
+        ${c.image_url ? `<img class="item-img" src="${c.image_url}">` : `<div class="item-img-placeholder">📦</div>`}
         <div class="item-info">
           <div class="item-name">${c.name}</div>
           <div class="item-price"><span class="item-price-coin">🪙</span> ${c.price}</div>
-
           <div style="display:flex;gap:6px">
             <button class="item-btn" onclick="openCasePreview('${c.id}')">?</button>
             <button class="item-btn buy" onclick="openCase('${c.id}')">Открыть</button>
           </div>
         </div>
-      </div>
-    
+      </div>`;
   }
 }
+
       const { data, error } = await client
         .from('shop_items')
         .select('*')
@@ -415,150 +403,99 @@ async function loadShopItems() {
       await client.auth.signOut()
       window.location.href = 'index.html'
     }
+	
 async function openCasePreview(caseId) {
-  const { data: items } = await client
-    .from('shop_items')
-    .select('*')
-    .eq('case_id', caseId)
+  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
+  if (!items) return;
 
-  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0)
-
-  let html = <div style="background:white;padding:20px;border-radius:10px">
+  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0);
+  let html = `<div style="background:white;padding:20px;border-radius:10px;color:black;">`;
 
   items.forEach(i => {
-    const percent = ((i.chance || 0) / total * 100).toFixed(2)
-
-    html += 
+    const percent = ((i.chance || 0) / total * 100).toFixed(2);
+    html += `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <img src="${i.image_url}" width="40">
         <span>${percent}%</span>
-      </div>
-    
-  })
+      </div>`;
+  });
 
-  html += <button onclick="closeModal()">Закрыть</button></div>
-
-  showModal(html)
-}
-
-async function openCasePreview(caseId) {
-  const { data: items } = await client
-    .from('shop_items')
-    .select('*')
-    .eq('case_id', caseId)
-
-  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0)
-
-  let html = <div style="background:white;padding:20px;border-radius:10px">
-
-  items.forEach(i => {
-    const percent = ((i.chance || 0) / total * 100).toFixed(2)
-
-    html += 
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <img src="${i.image_url}" width="40">
-        <span>${percent}%</span>
-      </div>
-    
-  })
-
-  html += <button onclick="closeModal()">Закрыть</button></div>
-
-  showModal(html)
+  html += `<button onclick="closeModal()">Закрыть</button></div>`;
+  showModal(html);
 }
 
 
 function rollItem(items) {
-  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0)
-  const random = Math.random() * total
-
-  let current = 0
-
+  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0);
+  const random = Math.random() * total;
+  let current = 0;
   for (const item of items) {
-    current += item.chance || 0
-    if (random <= current) return item
+    current += item.chance || 0;
+    if (random <= current) return item;
   }
 }
 
-
-
 async function openCase(caseId) {
-  const { data: items } = await client
-    .from('shop_items')
-    .select('*')
-    .eq('case_id', caseId)
-
-  const win = rollItem(items)
-
-  startRouletteAnimation(items, win)
-
-  // добавить в инвентарь
+  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
+  const win = rollItem(items);
+  startRouletteAnimation(items, win);
   await client.from('owned_avatars').insert({
     user_id: currentUser.id,
     item_id: win.id,
     type: win.type
-  })
+  });
 }
 
 
 function startRouletteAnimation(items, winItem) {
-  const container = document.createElement('div')
-  container.className = 'roulette'
-
-  const track = document.createElement('div')
-  track.className = 'roulette-track'
-
-  let elements = []
-
+  const container = document.createElement('div');
+  container.className = 'roulette';
+  const track = document.createElement('div');
+  track.className = 'roulette-track';
+  let elements = [];
   for (let i = 0; i < 40; i++) {
-    elements.push(items[Math.floor(Math.random() * items.length)])
+    elements.push(items[Math.floor(Math.random() * items.length)]);
   }
-
-  elements[32] = winItem
-  track.innerHTML = elements.map(i => <img src="${i.image_url}">).join('')
-
-  container.innerHTML = <div class="case-roulette-pointer"></div>
-  container.appendChild(track)
-
-  document.body.appendChild(container)
+  elements[32] = winItem;
+  track.innerHTML = elements.map(i => `<img src="${i.image_url}" style="width:100px;height:100px;margin:5px;">`).join('');
+  container.innerHTML = `<div class="case-roulette-pointer" style="position:absolute;left:50%;top:0;width:2px;height:100%;background:red;z-index:10;"></div>`;
+  container.appendChild(track);
+  document.body.appendChild(container);
 
   setTimeout(() => {
-    track.style.transform = translateX(-${32 * 110}px)
-  }, 50)
+    track.style.transition = "transform 3s cubic-bezier(0.1, 0, 0.1, 1)";
+    track.style.transform = `translateX(-${32 * 110}px)`;
+  }, 50);
 
   setTimeout(() => {
-    showWin(winItem)
-    container.remove()
-  }, 3200)
+    showWin(winItem);
+    container.remove();
+  }, 3200);
 }
 
 
 function showWin(item) {
-  showModal(
-    <div style="background:white;padding:20px;border-radius:10px;text-align:center">
+  showModal(`
+    <div style="background:white;padding:20px;border-radius:10px;text-align:center;color:black;">
       <img src="${item.image_url}" width="120">
       <h2>${item.name}</h2>
       <p>${item.type === 'background' ? 'Фон' : 'Аватар'}</p>
       <button onclick="closeModal()">Закрыть</button>
-    </div>
-  )
+    </div>`
+  );
 }
 
 function showModal(html) {
-  const modal = document.createElement('div')
-  modal.id = 'modal'
-  modal.style = 
-    position:fixed;inset:0;
-    background:rgba(0,0,0,0.7);
-    display:flex;align-items:center;justify-content:center;
-    z-index:9999;
-  
-  modal.innerHTML = html
-  document.body.appendChild(modal)
+  const modal = document.createElement('div');
+  modal.id = 'modal';
+  modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
 }
 
 function closeModal() {
-  document.getElementById('modal')?.remove()
+  const m = document.getElementById('modal');
+  if (m) m.remove();
 }
     init()
   </script>
