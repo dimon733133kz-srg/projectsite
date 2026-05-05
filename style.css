@@ -2187,3 +2187,52 @@ body.dark .forgot-link a {
   color: #60a5fa;
 }
 
+.case-img-wrap {
+  position: relative;
+}
+
+.case-help-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.case-help-btn:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+/* казино */
+.roulette {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.roulette-track {
+  display: flex;
+  gap: 10px;
+  transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1);
+}
+
+.roulette-track img {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+}
+
+.roulette-pointer {
+  position: absolute;
+  width: 4px;
+  height: 120px;
+  background: yellow;
+}
