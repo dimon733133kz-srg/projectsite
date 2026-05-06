@@ -280,8 +280,6 @@ async function handleOpenCase(caseId, price) {
   const { data: profile } = await client.from('profiles').select('money').eq('id', currentUser.id).single();
   if (profile.money < price) { showToast('Недостаточно монет!', 'error'); return; }
 
-  const { data: caseData } = await client.from('cases').select('sound_url').eq('id', caseId).single();
-  
   const { error: mErr } = await client.from('profiles').update({ money: profile.money - price }).eq('id', currentUser.id);
   if (mErr) return;
 
@@ -290,8 +288,13 @@ async function handleOpenCase(caseId, price) {
   const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
   const win = rollItem(items);
   
-  await client.from('owned_avatars').insert({ user_id: currentUser.id, item_id: win.id, type: win.type });
-  startRouletteAnimation(items, win, caseData?.sound_url);
+  await client.from('owned_avatars').insert({ 
+    user_id: currentUser.id, 
+    item_id: win.id, 
+    type: win.type 
+  });
+
+  startRouletteAnimation(items, win);
 }
 
 function rollItem(items) {
@@ -323,7 +326,7 @@ async function openCasePreview(caseId) {
   showModal(html)
 }
 
-function startRouletteAnimation(items, winItem, soundUrl) {
+function startRouletteAnimation(items, winItem) {
   const modal = document.createElement('div');
   modal.id = 'modal';
   modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;";
@@ -333,52 +336,53 @@ function startRouletteAnimation(items, winItem, soundUrl) {
       <div id="roulette-track" style="display:flex;will-change:transform;align-items:center;"></div>
       <div style="position:absolute;left:50%;top:0;bottom:0;width:4px;background:#ef4444;z-index:10;transform:translateX(-50%);box-shadow: 0 0 10px red;"></div>
     </div>
-    <p id="roulette-status" style="margin-top:20px;color:#94a3b8;font-weight:bold;letter-spacing:1px;">ЗАГРУЗКА...</p>`;
+    <p style="margin-top:20px;color:#3b82f6;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">Удача улыбается тебе...</p>`;
   
   document.body.appendChild(modal);
   const track = document.getElementById('roulette-track');
-  const status = document.getElementById('roulette-status');
 
-  const totalItems = 60; 
-  const winIndex = 52;
+  const totalItemsCount = 60; 
+  const winIndex = 50; 
   const elements = [];
-  for (let i = 0; i < totalItems; i++) {
+  for (let i = 0; i < totalItemsCount; i++) {
     elements.push(items[Math.floor(Math.random() * items.length)]);
   }
   elements[winIndex] = winItem;
   
   track.innerHTML = elements.map(i => `
-    <div style="min-width:130px;height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid #1e293b;padding:10px;">
-      <img src="${i.image_url}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;box-shadow: 0 4px 10px rgba(0,0,0,0.5)">
+    <div style="min-width:130px;height:140px;display:flex;align-items:center;justify-content:center;border-right:1px solid #1e293b;">
+      <img src="${i.image_url}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;">
     </div>`).join('');
+  
+  const rollSound = new Audio('sounds/caseroll.mp3');
+  const resultSound = new Audio('sounds/caseresult.mp3');
+  
+  const animationDuration = 5; 
 
-  const audio = new Audio(soundUrl);
-  audio.preload = 'auto';
+  rollSound.play().catch(e => console.log("Ошибка звука:", e));
 
-  audio.oncanplaythrough = () => {
-    status.textContent = "КРУТИМ!";
-    const duration = audio.duration || 5; 
+  setTimeout(() => {
+    track.style.transition = `transform ${animationDuration}s cubic-bezier(0.15, 0, 0.05, 1)`;
     
-    audio.play();
-    track.style.transition = `transform ${duration}s cubic-bezier(0.15, 0, 0.05, 1)`;
-
-    const randomOffset = Math.floor(Math.random() * 80) - 40; 
-    const finalShift = (winIndex * 130) - (300 - 65) + randomOffset; 
+    const itemWidth = 130;
+    const centerOffset = 300 - (itemWidth / 2);
+    const randomInItem = Math.floor(Math.random() * 80) - 40; 
+    const finalShift = (winIndex * itemWidth) - centerOffset + randomInItem;
     
-    setTimeout(() => {
-      track.style.transform = `translateX(-${finalShift}px)`;
-    }, 50);
+    track.style.transform = `translateX(-${finalShift}px)`;
+  }, 50);
 
-    setTimeout(() => {
-      modal.remove();
-      showWin(winItem);
-      loadOwned();
-    }, duration * 1000 + 300);
-  };
+  setTimeout(() => {
 
-  audio.onerror = () => {
-    audio.oncanplaythrough();
-  };
+    rollSound.pause();
+    rollSound.currentTime = 0;
+
+    resultSound.play().catch(e => console.log("Ошибка звука:", e));
+
+    modal.remove();
+    showWin(winItem);
+    loadOwned(); 
+  }, (animationDuration * 1000));
 }
 
 function showWin(item) {
