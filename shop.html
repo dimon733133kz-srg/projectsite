@@ -291,7 +291,6 @@ async function handleOpenCase(caseId, price) {
   const win = rollItem(items);
   
   await client.from('owned_avatars').insert({ user_id: currentUser.id, item_id: win.id, type: win.type });
-а
   startRouletteAnimation(items, win, caseData?.sound_url);
 }
 
