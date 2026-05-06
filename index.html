@@ -18,8 +18,6 @@
   </header>
 
   <div class="auth-wrapper">
-
-    <!-- ФОРМА РЕГИСТРАЦИИ -->
     <div class="auth-box" id="register-form">
       <h1>Регистрация</h1>
 
@@ -58,7 +56,6 @@
       </div>
     </div>
 
-    <!-- ФОРМА ВХОДА -->
     <div class="auth-box" id="login-form" style="display: none;">
       <h1>Вход</h1>
 
@@ -80,7 +77,6 @@
       </div>
     </div>
 
-    <!-- ФОРМА ВОССТАНОВЛЕНИЯ ПАРОЛЯ -->
     <div class="auth-box" id="forgot-form" style="display: none;">
       <h1>Восстановление пароля</h1>
 
@@ -116,15 +112,12 @@
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    // Сохранённые данные регистрации — вставим в profiles после подтверждения email
     let pendingProfile = null
 
     window.onload = async () => {
       const { data: { session } } = await client.auth.getSession()
 
-      // Если пришли по ссылке подтверждения — сессия уже создана
       if (session) {
-        // Проверяем есть ли профиль — если нет, создаём из pendingProfile
         const { data: profile } = await client
           .from('profiles')
           .select('id')
@@ -132,7 +125,6 @@
           .single()
 
         if (!profile) {
-          // Пробуем достать сохранённые данные из localStorage
           const saved = localStorage.getItem('pendingProfile')
           if (saved) {
             const p = JSON.parse(saved)
@@ -203,9 +195,8 @@
         return
       }
 
-      const group = `${prefix}${yearVal}`
+      const group = `${prefix}-${yearVal}`
 
-      // Сохраняем данные профиля локально — вставим после подтверждения email
       localStorage.setItem('pendingProfile', JSON.stringify({ name, group }))
 
       const { error } = await client.auth.signUp({
@@ -240,8 +231,7 @@
         setMessage('login-message', 'Ошибка: ' + error.message)
         return
       }
-
-      // Проверяем подтверждён ли email
+      
       if (!data.user.email_confirmed_at) {
         await client.auth.signOut()
         setMessage('login-message', 'Сначала подтверди email — проверь почту!')
