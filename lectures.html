@@ -368,7 +368,6 @@ function renderResultsBox(r) {
 
 function closeQuiz() { document.getElementById('quiz-overlay').classList.remove('active') }
 
-// --- АДМИН ПАНЕЛЬ (ПРЕПОДАВАТЕЛЬ) ---
 async function loadTeacherPassword() {
   try {
     const { data } = await client.storage.from('config').download('teacher_password.txt')
@@ -391,40 +390,80 @@ async function deleteLecture(id) {
   await client.from('lectures').delete().eq('id', id)
   loadSections()
 }
+async function prepareEdit(id) {
+  editingLectureId = id;
+  const { data: lec } = await client.from('lectures').select('*').eq('id', id).single();
 
-function prepareEdit(id) {
-  editingLectureId = id
-  openAddModal()
-  const lec = allSections.flatMap(s => s.id).find(l => l === id) // Упрощенный поиск
-  document.querySelector('#add-modal .modal-title').textContent = '✏️ Редактирование'
-  document.getElementById('add-confirm-btn').textContent = 'Сохранить'
+  const res = await fetch(lec.file_url);
+  const jsonContent = await res.json();
+
+  openAddModal();
+  document.getElementById('modal-title-text').textContent = '📝 Редактирование лекции';
+  document.getElementById('lecture-title-input').value = lec.title;
+  document.getElementById('section-select').value = lec.section_id;
+
+  document.getElementById('file-drop-zone').style.display = 'none';
+
+  let editor = document.getElementById('json-editor');
+  if (!editor) {
+    editor = document.createElement('textarea');
+    editor.id = 'json-editor';
+    editor.className = 'edit-area';
+    document.getElementById('preview-wrap').before(editor);
+  }
+  editor.style.display = 'block';
+  editor.value = JSON.stringify(jsonContent, null, 2); 
+  
+  document.getElementById('add-confirm-btn').textContent = 'Сохранить изменения';
 }
 
 async function addLecture() {
-  const title = document.getElementById('lecture-title-input').value.trim()
-  const sectionId = document.getElementById('section-select').value
-  const btn = document.getElementById('add-confirm-btn')
+  const title = document.getElementById('lecture-title-input').value.trim();
+  const sectionId = document.getElementById('section-select').value;
+  const btn = document.getElementById('add-confirm-btn');
+  const editor = document.getElementById('json-editor');
 
-  if (!title || !sectionId) return alert('Заполни поля')
-  btn.disabled = true
+  if (!title || !sectionId) return alert('Заполни поля!');
+  btn.disabled = true;
 
-  let fileUrl = null
-  if (selectedJsonFile) {
-    const fileName = `${Date.now()}_${selectedJsonFile.name}`
-    await client.storage.from('lectures').upload(fileName, selectedJsonFile)
-    fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl
+  let fileUrl = null;
+
+  if (editingLectureId && editor && editor.style.display !== 'none') {
+    try {
+      const updatedJson = JSON.parse(editor.value);
+      const blob = new Blob([JSON.stringify(updatedJson)], { type: 'application/json' });
+      const fileName = `updated_${Date.now()}.json`;
+      
+      await client.storage.from('lectures').upload(fileName, blob);
+      fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
+    } catch (e) {
+      alert("Ошибка в формате текста! Проверь запятые и скобки.");
+      btn.disabled = false;
+      return;
+    }
+  } 
+
+  else if (selectedJsonFile) {
+    const fileName = `${Date.now()}_${selectedJsonFile.name}`;
+    await client.storage.from('lectures').upload(fileName, selectedJsonFile);
+    fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
   }
 
   if (editingLectureId) {
-    const up = { title, section_id: sectionId }
-    if (fileUrl) up.file_url = fileUrl
-    await client.from('lectures').update(up).eq('id', editingLectureId)
+    const upData = { title, section_id: sectionId };
+    if (fileUrl) upData.file_url = fileUrl;
+    await client.from('lectures').update(upData).eq('id', editingLectureId);
   } else {
-    if (!fileUrl) return alert('Нужен файл!')
-    await client.from('lectures').insert({ title, section_id: sectionId, file_url: fileUrl, order: 99 })
+    if (!fileUrl) { alert('Выбери файл!'); btn.disabled = false; return; }
+    await client.from('lectures').insert({ title, section_id: sectionId, file_url: fileUrl, order: 99 });
   }
 
-  editingLectureId = null; closeAddModal(); loadSections(); btn.disabled = false
+  editingLectureId = null;
+  if (editor) editor.style.display = 'none';
+  document.getElementById('file-drop-zone').style.display = 'block';
+  closeAddModal();
+  loadSections();
+  btn.disabled = false;
 }
 
 
