@@ -2315,3 +2315,28 @@ body.dark .lecture-btn.locked {
 .lecture-btn span[onclick]:hover {
     transform: scale(1.3);
 }
+
+  body.dark .modal-box {
+    background: #1e293b;
+    color: #f1f5f9;
+    border: 1px solid #334155;
+}
+
+body.dark .modal-label { color: #94a3b8; }
+body.dark input, body.dark select, body.dark textarea {
+    background: #0f172a;
+    color: white;
+    border: 1px solid #334155;
+}
+
+.edit-area {
+    width: 100%;
+    min-height: 400px;
+    font-family: 'Courier New', monospace;
+    padding: 15px;
+    border-radius: 8px;
+    resize: vertical;
+    margin-bottom: 15px;
+}
+
+/* как же я ебал это всё с нуля переделывать но вот переделал лекции*/
