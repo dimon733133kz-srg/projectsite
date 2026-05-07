@@ -2242,3 +2242,76 @@ body.dark .forgot-link a {
   background: var(--border);
   border-radius: 10px;
 }
+
+.lecture-btn.locked {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+    background: rgba(0, 0, 0, 0.05);
+    filter: grayscale(1);
+}
+
+.lecture-btn.locked:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    transform: none !important;
+}
+
+.lecture-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.lec-title {
+    flex: 1;
+}
+
+.admin-controls {
+    display: flex;
+    gap: 8px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.lecture-btn:hover .admin-controls {
+    opacity: 1;
+}
+
+.admin-btn {
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.admin-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.2);
+}
+
+body.dark .lecture-btn.locked {
+    background: rgba(255, 255, 255, 0.05);
+    color: #64748b;
+}
+
+.lecture-btn.active {
+    border-left: 4px solid var(--accent);
+    background: var(--bg-secondary);
+}
+
+.lecture-btn.locked {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+    pointer-events: none;
+    cursor: not-allowed;
+
+
+.lecture-btn span[onclick] {
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.lecture-btn span[onclick]:hover {
+    transform: scale(1.3);
+}
