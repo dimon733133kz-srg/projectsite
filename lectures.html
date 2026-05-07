@@ -280,35 +280,37 @@ function renderLecture(data, lectureId, existingResult) {
   if (data.content && Array.isArray(data.content)) {
     data.content.forEach(block => {
       if (block.type === 'heading') {
-        blocksHtml += `<h2 class="lecture-block-heading">${block.text}</h2>`;
+        blocksHtml += `<h2 class="lecture-block-heading" style="color: var(--accent); margin-top: 25px;">${block.text}</h2>`;
       } else if (block.type === 'paragraph') {
-        blocksHtml += `<p class="lecture-block-paragraph">${block.text}</p>`;
+        blocksHtml += `<p class="lecture-block-paragraph" style="line-height: 1.6; margin-bottom: 15px; opacity: 0.9;">${block.text}</p>`;
       } else if (block.type === 'code') {
-        blocksHtml += `<div class="lecture-block-code">${block.text}</div>`;
+        blocksHtml += `
+          <div style="background: #1e1e1e; color: #4ade80; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 14px; margin: 15px 0; border-left: 4px solid #4ade80; white-space: pre-wrap; word-break: break-all;">
+            ${block.text}
+          </div>`;
       } else if (block.type === 'image') {
-        blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="${block.alt || ''}">`;
+        blocksHtml += `<img src="${block.src}" alt="${block.alt || ''}" style="width: 100%; border-radius: 12px; margin: 15px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">`;
       }
     });
   }
 
   const hasQuestions = data.questions && data.questions.length > 0;
   let btnHtml = hasQuestions ? `
-    <button class="start-test-btn" id="start-test-btn">
-      ${existingResult ? `📊 Пройдено (${existingResult.percent}%)` : `🧪 Начать тест`}
+    <button class="start-test-btn" id="start-test-btn" style="width: 100%; padding: 15px; margin-top: 20px; border-radius: 10px; cursor: pointer; background: ${existingResult ? '#475569' : 'var(--accent)'}; color: white; border: none; font-weight: bold;">
+      ${existingResult ? `📊 Пройдено (${existingResult.percent}%)` : `🧪 Начать тест (${data.questions.length})`}
     </button>` : '';
 
   content.innerHTML = `
-    <div class="lecture-body">
-      <h1>${data.title || 'Лекция'}</h1>
+    <div class="lecture-body" style="padding-bottom: 40px;">
+      <h1 style="font-size: 2.5rem; margin-bottom: 10px;">${data.title || 'Без названия'}</h1>
+      <p style="opacity: 0.6; font-style: italic; margin-bottom: 30px;">${data.description || ''}</p>
       ${blocksHtml}
-    </div>
-    ${btnHtml}
-  `;
+      ${btnHtml}
+    </div>`;
 
   if (hasQuestions) {
-    const btn = document.getElementById('start-test-btn');
-    btn.onclick = () => {
-      if (existingResult) alert("Вы уже прошли этот тест!");
+    document.getElementById('start-test-btn').onclick = () => {
+      if (existingResult) alert(`Ваш результат: ${existingResult.percent}%`);
       else startQuiz(data.questions, lectureId);
     };
   }
@@ -427,36 +429,36 @@ function checkTeacherPassword() {
   } else alert('Неверный пароль')
 }
 
-async function deleteLecture(id) {
-  if (!confirm('Удалить лекцию?')) return
-  await client.from('lectures').delete().eq('id', id)
-  loadSections()
-}
 async function prepareEdit(id) {
   editingLectureId = id;
   const { data: lec } = await client.from('lectures').select('*').eq('id', id).single();
-  
   const response = await fetch(lec.file_url);
   const jsonContent = await response.json();
 
   openAddModal();
   
-  document.getElementById('modal-title-text').textContent = '📝 Вики-редактор лекции';
+  const modalBox = document.querySelector('#add-modal .modal-box');
+  if (document.body.classList.contains('dark') && modalBox) {
+    modalBox.style.background = '#111827';
+    modalBox.style.color = '#f9fafb';
+    modalBox.style.border = '1px solid #374151';
+  }
+
+  document.getElementById('modal-title-text').textContent = '📝 Редактор';
   document.getElementById('lecture-title-input').value = lec.title;
   document.getElementById('section-select').value = lec.section_id;
-  
   document.getElementById('file-drop-zone').style.display = 'none';
   
   let editor = document.getElementById('json-editor');
   if (!editor) {
     editor = document.createElement('textarea');
     editor.id = 'json-editor';
+    editor.style.cssText = "width:100%; min-height:500px; margin-top:15px; font-family:monospace; padding:15px; background:#000; color:#4ade80; border:1px solid #4ade80; border-radius:8px; font-size:14px; line-height:1.5;";
     document.getElementById('preview-wrap').before(editor);
   }
   editor.style.display = 'block';
-  editor.value = JSON.stringify(jsonContent, null, 2); 
-
-  document.getElementById('add-confirm-btn').textContent = 'Сохранить и обновить контент';
+  editor.value = JSON.stringify(jsonContent, null, 2);
+  document.getElementById('add-confirm-btn').textContent = 'Сохранить изменения';
 }
 
 async function addLecture() {
@@ -465,47 +467,43 @@ async function addLecture() {
   const btn = document.getElementById('add-confirm-btn');
   const editor = document.getElementById('json-editor');
 
-  if (!title || !sectionId) return alert('Заполни поля!');
+  if (!title || !sectionId) return alert('Заполните все поля!');
   btn.disabled = true;
 
-  let fileUrl = null;
-
-  if (editingLectureId && editor && editor.style.display !== 'none') {
-    try {
+  try {
+    let blob;
+    if (editingLectureId && editor && editor.style.display !== 'none') {
       const updatedJson = JSON.parse(editor.value);
-      const blob = new Blob([JSON.stringify(updatedJson)], { type: 'application/json' });
-      const fileName = `updated_${Date.now()}.json`;
-      
-      await client.storage.from('lectures').upload(fileName, blob);
-      fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
-    } catch (e) {
-      alert("Ошибка в формате текста! Проверь запятые и скобки.");
+      blob = new Blob([JSON.stringify(updatedJson)], { type: 'application/json' });
+    } else if (selectedJsonFile) {
+      blob = selectedJsonFile;
+    } else if (!editingLectureId) {
+      alert('Нужен файл!');
       btn.disabled = false;
       return;
     }
-  } 
 
-  else if (selectedJsonFile) {
-    const fileName = `${Date.now()}_${selectedJsonFile.name}`;
-    await client.storage.from('lectures').upload(fileName, selectedJsonFile);
-    fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
+    let fileUrl = null;
+    if (blob) {
+      const fileName = `lec_${Date.now()}.json`;
+      const upload = await client.storage.from('lectures').upload(fileName, blob);
+      if (upload.error) throw upload.error;
+      fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
+    }
+
+    if (editingLectureId) {
+      const upData = { title, section_id: sectionId };
+      if (fileUrl) upData.file_url = fileUrl;
+      await client.from('lectures').update(upData).eq('id', editingLectureId);
+    } else {
+      await client.from('lectures').insert({ title, section_id: sectionId, file_url: fileUrl, order: 99 });
+    }
+
+    location.reload();
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+    btn.disabled = false;
   }
-
-  if (editingLectureId) {
-    const upData = { title, section_id: sectionId };
-    if (fileUrl) upData.file_url = fileUrl;
-    await client.from('lectures').update(upData).eq('id', editingLectureId);
-  } else {
-    if (!fileUrl) { alert('Выбери файл!'); btn.disabled = false; return; }
-    await client.from('lectures').insert({ title, section_id: sectionId, file_url: fileUrl, order: 99 });
-  }
-
-  editingLectureId = null;
-  if (editor) editor.style.display = 'none';
-  document.getElementById('file-drop-zone').style.display = 'block';
-  closeAddModal();
-  loadSections();
-  btn.disabled = false;
 }
 
 
