@@ -151,7 +151,6 @@
 
     <div class="modal-btns">
       <button class="modal-btn cancel" onclick="closeAddModal()">Отмена</button>
-      <!-- Основная кнопка с ID для смены текста -->
       <button class="modal-btn confirm" id="add-confirm-btn" onclick="addLecture()">Добавить лекцию</button>
     </div>
   </div>
@@ -315,31 +314,6 @@ function renderLecture(data, lectureId, existingResult) {
     };
   }
 }
-
-  const hasQuestions = data.questions && data.questions.length > 0;
-  let btnHtml = hasQuestions ? `
-    <button class="start-test-btn" id="start-test-btn" style="${existingResult ? 'background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary);' : ''}">
-      ${existingResult ? `📊 Результат: ${existingResult.percent}%` : `🧪 Начать тест (${data.questions.length} вопр.)`}
-    </button>` : '';
-
-  content.innerHTML = `
-    <div class="lecture-body">
-      <h1>${data.title || 'Без названия'}</h1>
-      <p style="opacity: 0.7; margin-bottom: 20px;">${data.description || ''}</p>
-      ${blocksHtml}
-    </div>
-    ${btnHtml}
-  `;
-
-  if (hasQuestions) {
-    document.getElementById('start-test-btn').onclick = () => {
-      if (existingResult) {
-          alert(`Вы уже прошли этот тест на ${existingResult.percent}%.\nПравильных: ${existingResult.correct} из ${existingResult.total}`);
-      } else {
-          startQuiz(data.questions, lectureId);
-      }
-    };
-  }
 
 function shuffle(arr) {
   const a = [...arr]
