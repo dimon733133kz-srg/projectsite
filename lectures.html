@@ -273,26 +273,46 @@ async function loadLecture(lectureId, btn) {
 
 function renderLecture(data, lectureId, existingResult) {
   const content = document.getElementById('lecture-content');
+  if (!content) return;
+
   let blocksHtml = '';
 
   if (data.content && Array.isArray(data.content)) {
     data.content.forEach(block => {
-      switch(block.type) {
-        case 'heading':
-          blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`;
-          break;
-        case 'paragraph':
-          blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`;
-          break;
-        case 'code':
-          blocksHtml += `<pre class="lecture-block-code"><code>${block.text}</code></pre>`;
-          break;
-        case 'image':
-          blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="${block.alt || ''}">`;
-          break;
+      if (block.type === 'heading') {
+        blocksHtml += `<h2 class="lecture-block-heading">${block.text}</h2>`;
+      } else if (block.type === 'paragraph') {
+        blocksHtml += `<p class="lecture-block-paragraph">${block.text}</p>`;
+      } else if (block.type === 'code') {
+        blocksHtml += `<div class="lecture-block-code">${block.text}</div>`;
+      } else if (block.type === 'image') {
+        blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="${block.alt || ''}">`;
       }
     });
   }
+
+  const hasQuestions = data.questions && data.questions.length > 0;
+  let btnHtml = hasQuestions ? `
+    <button class="start-test-btn" id="start-test-btn">
+      ${existingResult ? `📊 Пройдено (${existingResult.percent}%)` : `🧪 Начать тест`}
+    </button>` : '';
+
+  content.innerHTML = `
+    <div class="lecture-body">
+      <h1>${data.title || 'Лекция'}</h1>
+      ${blocksHtml}
+    </div>
+    ${btnHtml}
+  `;
+
+  if (hasQuestions) {
+    const btn = document.getElementById('start-test-btn');
+    btn.onclick = () => {
+      if (existingResult) alert("Вы уже прошли этот тест!");
+      else startQuiz(data.questions, lectureId);
+    };
+  }
+}
 
   const hasQuestions = data.questions && data.questions.length > 0;
   let btnHtml = hasQuestions ? `
