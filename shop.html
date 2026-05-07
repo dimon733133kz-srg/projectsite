@@ -395,8 +395,8 @@ function startRouletteAnimation(items, winItem) {
   document.body.appendChild(modal);
   const track = document.getElementById('roulette-track');
 
-  const totalItemsCount = 60; 
-  const winIndex = 50; 
+  const totalItemsCount = 600; 
+  const winIndex = 500; 
   const elements = [];
   for (let i = 0; i < totalItemsCount; i++) {
     elements.push(items[Math.floor(Math.random() * items.length)]);
