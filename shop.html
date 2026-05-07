@@ -309,21 +309,75 @@ function rollItem(items) {
 }
 
 async function openCasePreview(caseId) {
-  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId)
-  if (!items) return
-  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0)
+  const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
+  if (!items) return;
   
-  let html = `<div style="background:var(--bg-card);padding:20px;border-radius:12px;max-width:300px;width:90%">
-    <h3 style="margin-top:0">Содержимое:</h3>`
+  const total = items.reduce((sum, i) => sum + (i.chance || 0), 0);
+  
+  let html = `
+    <div style="
+      background: var(--bg-card); 
+      padding: 25px; 
+      border-radius: 20px; 
+      max-width: 800px; 
+      width: 90%; 
+      max-height: 80vh; 
+      display: flex; 
+      flex-direction: column; 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
+      color: var(--text);
+    ">
+      <h3 style="margin: 0 0 20px 0; font-size: 20px; text-align: center;">Содержимое кейса</h3>
+      
+      <!-- Сетка с предметами -->
+      <div style="
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+        gap: 15px; 
+        overflow-y: auto; 
+        padding-right: 10px;
+        margin-bottom: 20px;
+        scrollbar-width: thin;
+      " class="custom-scroll">
+  `;
+
   items.forEach(i => {
-    const percent = ((i.chance || 0) / total * 100).toFixed(1)
-    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <img src="${i.image_url}" width="40" height="40" style="border-radius:4px;object-fit:cover">
-      <span>${i.name} (${percent}%)</span>
-    </div>`
-  })
-  html += `<button class="item-btn" style="width:100%;margin-top:10px" onclick="closeModal()">Закрыть</button></div>`
-  showModal(html)
+    const percent = ((i.chance || 0) / total * 100).toFixed(1);
+    html += `
+      <div style="
+        background: var(--bg); 
+        padding: 12px; 
+        border-radius: 12px; 
+        text-align: center; 
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      ">
+        <img src="${i.image_url}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+        <div style="font-size: 13px; font-weight: 600; line-height: 1.2;">${i.name}</div>
+        <div style="font-size: 11px; color: var(--accent); font-weight: bold;">${percent}%</div>
+      </div>`;
+  });
+
+  html += `
+      </div>
+      <button class="item-btn" style="
+        width: 100%; 
+        padding: 12px; 
+        background: var(--accent); 
+        color: white; 
+        border: none; 
+        border-radius: 10px; 
+        cursor: pointer; 
+        font-weight: bold;
+      " onclick="closeModal()">Понятно</button>
+    </div>
+  `;
+  
+  showModal(html);
 }
 
 function startRouletteAnimation(items, winItem) {
