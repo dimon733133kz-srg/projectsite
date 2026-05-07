@@ -151,7 +151,6 @@
 
     <div class="modal-btns">
       <button class="modal-btn cancel" onclick="closeAddModal()">Отмена</button>
-      <!-- Основная кнопка с ID для смены текста -->
       <button class="modal-btn confirm" id="add-confirm-btn" onclick="addLecture()">Добавить лекцию</button>
     </div>
   </div>
@@ -178,28 +177,43 @@ let quizQuestions = [], quizLectureId = null, quizOrder = [], quizIndex = 0
 let quizCorrect = 0, quizWrong = 0, quizSkipped = 0, quizTimer = null
 
 async function init() {
-  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { window.location.href = 'index.html'; return }
 
-  const { data: { session } } = await client.auth.getSession()
-  if (!session) { window.location.href = 'index.html'; return }
-  currentUserId = session.user.id
+      const { data, error } = await client
+        .from('profiles')
+        .select('name, profile_bg, profile_avatar, wins, win_streak')
+        .eq('id', session.user.id)
+        .single()
 
-  const { data: profile } = await client.from('profiles').select('*').eq('id', currentUserId).single()
-  if (profile) {
-    currentMoney = profile.money ?? 0
-    document.getElementById('profile-name').textContent = profile.name
-    document.getElementById('wins-count').textContent = profile.wins ?? 0
-    document.getElementById('streak-count').textContent = profile.win_streak ?? 0
-    if (profile.profile_avatar) document.getElementById('profile-avatar-img').src = profile.profile_avatar
-    if (profile.profile_bg) updateProfileBgDisplay(profile.profile_bg)
-  }
+      if (error || !data) { window.location.href = 'index.html'; return }
 
-  const { data: results } = await client.from('quiz_results').select('lecture_id').eq('user_id', currentUserId)
-  userProgress = new Set(results?.map(r => r.lecture_id) || [])
+      document.getElementById('profile-name').textContent = data.name
+      document.getElementById('wins-count').textContent = data.wins ?? 0
+      document.getElementById('streak-count').textContent = data.win_streak ?? 0
 
-  await loadTeacherPassword()
-  await loadSections()
-}
+      if (data.profile_avatar) {
+        document.getElementById('profile-avatar-img').src = data.profile_avatar
+      }
+
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+
+const img = document.createElement('img')
+img.src = data.profile_bg
+img.style.position = 'absolute'
+img.style.inset = '0'
+img.style.width = '100%'
+img.style.height = '100%'
+img.style.objectFit = 'contain'
+img.style.zIndex = '0'
+
+btn.appendChild(img)
+
+        btn.classList.add('has-bg')
+      }
+    }
 
 function updateProfileBgDisplay(url) {
   const btn = document.getElementById('profile-btn')
