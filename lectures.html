@@ -1,500 +1,249 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Лекции</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лекции - CodeLearn</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .header { height: 70px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 100; }
+        #profile-btn { height: 45px; padding: 5px 15px; display: flex; align-items: center; gap: 10px; border-radius: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); cursor: pointer; background-size: cover; background-position: center; }
+        .profile-avatar { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-info { display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
+        #profile-name { font-weight: 600; font-size: 14px; }
+        .profile-stats { font-size: 11px; display: flex; gap: 8px; opacity: 0.8; }
+        .lecture-btn.locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed !important; pointer-events: none; }
+        body.dark .modal-box { background: #1e293b !important; color: #f8fafc !important; border: 1px solid #334155; }
+        body.dark .modal-label { color: #94a3b8; }
+        body.dark #lecture-title-input, body.dark #section-select, body.dark #json-editor { background: #0f172a; color: #f1f5f9; border: 1px solid #334155; }
+        #json-editor { width: 100%; min-height: 300px; margin-top: 10px; font-family: monospace; padding: 10px; border-radius: 8px; resize: vertical; display: none; }
+    </style>
 </head>
 <body>
 
-  <header>
-    <div class="logo">
-      <a href="main.html">
-        <img src="logo.png" alt="Логотип">
-      </a>
+<header class="header">
+    <div class="header-left">
+        <a href="main.html" class="logo">CodeLearn</a>
     </div>
-
     <div class="header-right">
-      <div class="stat-badge wins" onclick="this.classList.toggle('show-count')">
-  <img src="icons/wins.png" alt="Победы">
-  <span id="wins-count">0</span>
-</div>
-<div class="stat-badge streak" onclick="this.classList.toggle('show-count')">
-  <img src="icons/streak.png" alt="Стрик">
-  <span id="streak-count">0</span>
-</div>
-
-      <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
-        <div class="profile-icon">
-          <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
+        <div class="profile-dropdown" id="profile-btn" onclick="toggleDropdown(event)">
+            <div class="profile-avatar">
+                <img src="icons/default-avatar.png" id="profile-avatar-img">
+            </div>
+            <div class="profile-info">
+                <span id="profile-name">Загрузка...</span>
+                <div class="profile-stats">
+                    <span>🏆 <span id="wins-count">0</span></span>
+                    <span>🔥 <span id="streak-count">0</span></span>
+                </div>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu">
+                <a href="profile.html" class="dropdown-item">👤 Профиль</a>
+                <div class="dropdown-divider"></div>
+                <button onclick="logout()" class="dropdown-item logout-btn">🚪 Выйти</button>
+            </div>
         </div>
-        <span class="profile-name" id="profile-name">Загрузка...</span>
-        <span class="profile-arrow">▼</span>
-
-        <div class="dropdown">
-          <a href="settings.html">⚙️ Настройки</a>
-          <div class="divider"></div>
-          <a href="#" class="logout" onclick="logout()">🚪 Выйти из аккаунта</a>
-        </div>
-      </div>
     </div>
-  </header>
+</header>
 
-  <main>
-    <div class="lectures-layout">
-
-      <div class="lectures-sidebar">
-        <div class="lectures-sidebar-header">
-          Лекции
-          <a href="main.html">← Назад</a>
+<main class="lectures-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3>Курс обучения</h3>
+            <button class="admin-only-btn" id="add-lecture-btn" onclick="openAddModal()" style="display:none">➕</button>
         </div>
-        <div id="sections-list">
-          <div class="lecture-placeholder" style="padding:30px;font-size:13px;color:#94a3b8;">Загрузка...</div>
-        </div>
-        <div class="sidebar-divider"></div>
-        <button class="sidebar-teacher-btn" id="teacher-sidebar-btn" onclick="openPasswordModal()">
-          🔑 Преподаватель
-        </button>
-        <button class="add-lecture-btn" id="add-lecture-btn" style="display:none;" onclick="openAddModal()">
-          ➕ Добавить лекцию
-        </button>
-      </div>
+        <div id="sections-list"></div>
+        <button class="teacher-mode-btn" id="teacher-sidebar-btn" onclick="openPasswordModal()">🔓 Режим преподавателя</button>
+    </aside>
 
-      <div class="lecture-content" id="lecture-content">
+    <section class="content-area" id="lecture-content">
         <div class="lecture-placeholder">
-          <div class="lecture-placeholder-icon">📖</div>
-          <div class="lecture-placeholder-text">Выбери лекцию из меню слева</div>
+            <div class="lecture-placeholder-text">Выберите лекцию из списка слева, чтобы начать обучение</div>
         </div>
-      </div>
+    </section>
+</main>
 
-    </div>
-  </main>
-
-  <footer>
-    <div class="credits">
-      <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
-      <span>Разработчик: <span class="credit-person">Дарханбаев Султан</span></span>
-    </div>
-    <div>©2026 Все права защищены.</div>
-  </footer>
-
-  <div class="quiz-overlay" id="quiz-overlay">
-    <div class="quiz-box" id="quiz-box"></div>
-  </div>
-
-  <div class="modal-overlay" id="password-modal">
+<div class="modal-overlay" id="password-modal">
     <div class="modal-box">
-      <div class="modal-title">🔑 Доступ преподавателя</div>
-      <div class="modal-desc">Введите пароль для управления лекциями</div>
-      <input type="password" id="teacher-pass-input" placeholder="Пароль"
-        onkeydown="if(event.key==='Enter') checkTeacherPassword()">
-      <div class="modal-err" id="password-err"></div>
-      <div class="modal-btns">
-        <button class="modal-btn cancel" onclick="closePasswordModal()">Отмена</button>
-        <button class="modal-btn confirm" onclick="checkTeacherPassword()">Войти</button>
-      </div>
+        <div class="modal-title">Вход для преподавателя</div>
+        <input type="password" id="teacher-pass-input" placeholder="Введите пароль">
+        <div class="modal-btns">
+            <button class="modal-btn cancel" onclick="closePasswordModal()">Отмена</button>
+            <button class="modal-btn confirm" onclick="checkTeacherPassword()">Войти</button>
+        </div>
     </div>
-  </div>
-
-  <div class="modal-overlay" id="add-modal">
-  <div class="modal-box">
-    <div class="modal-title" id="modal-title-text">➕ Добавить лекцию</div>
-
-    <div class="modal-label">Название лекции</div>
-    <input type="text" id="lecture-title-input" placeholder="Например: Введение в Python">
-
-    <div class="modal-label">Раздел</div>
-    <select id="section-select" onchange="onSectionChange()">
-      <option value="">Загрузка...</option>
-      <option value="__new__">+ Создать новый раздел</option>
-    </select>
-
-    <div id="new-section-wrap" style="display:none;">
-      <div class="modal-label">Название нового раздела</div>
-      <input type="text" id="new-section-input" placeholder="Например: Раздел 1. Основы">
-    </div>
-
-    <div class="modal-label">JSON файл лекции</div>
-    
-    <div class="file-drop-zone" id="file-drop-zone" onclick="document.getElementById('json-file-input').click()">
-      📄 Нажми чтобы выбрать или заменить .json файл
-    </div>
-    <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="onFileSelected()">
-
-    <div id="preview-wrap" style="display:none;">
-      <div class="modal-label">Превью файла</div>
-      <div class="preview-box" id="preview-box"></div>
-    </div>
-
-    <details style="cursor:pointer; margin-top: 15px;">
-      <summary style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">
-        📋 Справка: Формат JSON
-      </summary>
-      <div class="format-hint" style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 5px;">
-        Файл должен содержать: <b>title</b>, <b>content</b> (массив блоков) и <b>questions</b> (тест).
-        <pre style="white-space: pre-wrap; margin-top: 5px;">{
-"title": "Название",
-"content": [
-  { "type": "paragraph", "text": "Текст..." }
-],
-"questions": [
-  { "question": "2+2?", "options": ["3","4"], "answer": 1 }
-]
-}</pre>
-      </div>
-    </details>
-
-    <div class="modal-err" id="add-err"></div>
-    <div class="modal-success" id="add-success"></div>
-
-    <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="closeAddModal()">Отмена</button>
-      <button class="modal-btn confirm" id="add-confirm-btn" onclick="addLecture()">Добавить лекцию</button>
-    </div>
-  </div>
 </div>
- <script>
-const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
-const { createClient } = supabase
-const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+<div class="modal-overlay" id="add-modal">
+    <div class="modal-box">
+        <div class="modal-title" id="modal-title-text">➕ Добавить лекцию</div>
+        <div class="modal-label">Название</div>
+        <input type="text" id="lecture-title-input">
+        <div class="modal-label">Раздел</div>
+        <select id="section-select"></select>
+        <div class="file-drop-zone" id="file-drop-zone" onclick="document.getElementById('json-file-input').click()">
+            📄 Нажмите для выбора .json
+        </div>
+        <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="onFileSelected()">
+        <div id="preview-wrap" style="display:none"></div>
+        <div class="modal-btns">
+            <button class="modal-btn cancel" onclick="closeAddModal()">Отмена</button>
+            <button class="modal-btn confirm" id="add-confirm-btn" onclick="addLecture()">Сохранить</button>
+        </div>
+    </div>
+</div>
 
-let activeLectureBtn = null
-let currentUserId = null
-let currentMoney = 0
-let teacherPassword = null
-let isTeacher = false
-let selectedJsonData = null
-let selectedJsonFile = null
-let allSections = []
-let userProgress = new Set()
-let editingLectureId = null
+<div class="quiz-overlay" id="quiz-overlay">
+    <div class="quiz-box" id="quiz-box"></div>
+</div>
 
-let quizQuestions = [], quizLectureId = null, quizOrder = [], quizIndex = 0
-let quizCorrect = 0, quizWrong = 0, quizSkipped = 0, quizTimer = null
+<script>
+    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+    const { createClient } = supabase
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-async function init() {
-      const { data: { session } } = await client.auth.getSession()
-      if (!session) { window.location.href = 'index.html'; return }
+    let currentUserId, currentMoney, teacherPassword, isTeacher = false, editingLectureId = null, selectedJsonFile = null, userProgress = new Set(), allSections = []
+    let quizQuestions, quizLectureId, quizOrder, quizIndex, quizCorrect, quizWrong, quizSkipped, quizTimer
 
-      const { data, error } = await client
-        .from('profiles')
-        .select('name, profile_bg, profile_avatar, wins, win_streak')
-        .eq('id', session.user.id)
-        .single()
-
-      if (error || !data) { window.location.href = 'index.html'; return }
-
-      document.getElementById('profile-name').textContent = data.name
-      document.getElementById('wins-count').textContent = data.wins ?? 0
-      document.getElementById('streak-count').textContent = data.win_streak ?? 0
-
-      if (data.profile_avatar) {
-        document.getElementById('profile-avatar-img').src = data.profile_avatar
-      }
-
-      if (data.profile_bg) {
-        const btn = document.getElementById('profile-btn')
-        btn.style.backgroundImage = `url('${data.profile_bg}')`
-
-const img = document.createElement('img')
-img.src = data.profile_bg
-img.style.position = 'absolute'
-img.style.inset = '0'
-img.style.width = '100%'
-img.style.height = '100%'
-img.style.objectFit = 'contain'
-img.style.zIndex = '0'
-
-btn.appendChild(img)
-
-        btn.classList.add('has-bg')
-      }
+    async function init() {
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
+        const { data: { session } } = await client.auth.getSession()
+        if (!session) { window.location.href = 'index.html'; return }
+        currentUserId = session.user.id
+        const { data: profile } = await client.from('profiles').select('*').eq('id', currentUserId).single()
+        if (profile) {
+            currentMoney = profile.money ?? 0
+            if (document.getElementById('profile-name')) document.getElementById('profile-name').textContent = profile.name
+            if (document.getElementById('wins-count')) document.getElementById('wins-count').textContent = profile.wins ?? 0
+            if (document.getElementById('streak-count')) document.getElementById('streak-count').textContent = profile.win_streak ?? 0
+            if (document.getElementById('profile-avatar-img') && profile.profile_avatar) document.getElementById('profile-avatar-img').src = profile.profile_avatar
+            if (profile.profile_bg) {
+                const btn = document.getElementById('profile-btn')
+                btn.style.backgroundImage = `url('${profile.profile_bg}')`
+                btn.classList.add('has-bg')
+            }
+        }
+        const { data: results } = await client.from('quiz_results').select('lecture_id').eq('user_id', currentUserId)
+        userProgress = new Set(results?.map(r => r.lecture_id) || [])
+        await loadTeacherPassword()
+        await loadSections()
     }
 
-function updateProfileBgDisplay(url) {
-  const btn = document.getElementById('profile-btn')
-  if (!btn) return
-  btn.style.backgroundImage = `url('${url}')`
-  btn.classList.add('has-bg')
-}
-
-async function loadSections() {
-  const { data: sections } = await client.from('sections').select('*').order('order', { ascending: true })
-  const { data: lectures } = await client.from('lectures').select('*').order('order', { ascending: true })
-  allSections = sections || []
-
-  const list = document.getElementById('sections-list')
-  list.innerHTML = ''
-
-  let canOpenNext = true 
-
-  allSections.forEach(section => {
-    const sLecs = lectures?.filter(l => l.section_id === section.id) || []
-    const sectionEl = document.createElement('div')
-    sectionEl.className = 'section-item'
-    
-    let lecsHtml = ''
-    sLecs.forEach(l => {
-      const isPassed = userProgress.has(l.id)
-      const isLocked = !canOpenNext && !isTeacher
-
-      lecsHtml += `
-        <button class="lecture-btn ${isLocked ? 'locked' : ''}" 
-                onclick="${isLocked ? "alert('Эта лекция пока закрыта!')" : `loadLecture('${l.id}', this)`}">
-          ${isLocked ? '<img src="icons/lock.png" style="width:12px;margin-right:8px;filter:grayscale(1);">' : ''}
-          <span style="flex:1; ${isLocked ? 'color:#94a3b8' : ''}">${l.title}</span>
-          ${isPassed ? ' <span style="color:#22c55e;font-size:12px;font-weight:bold;">✔</span>' : ''}
-          ${isTeacher ? `
-            <span onclick="event.stopPropagation(); prepareEdit('${l.id}')" style="margin-left:10px; cursor:pointer;" title="Редактировать">✏️</span>
-            <span onclick="event.stopPropagation(); deleteLecture('${l.id}')" style="margin-left:10px; cursor:pointer;" title="Удалить">🗑️</span>
-          ` : ''}
-        </button>`
-      
-      if (!isPassed) canOpenNext = false
-    })
-
-    sectionEl.innerHTML = `
-      <button class="section-toggle open" onclick="toggleSection(this)">${section.title} <span class="section-arrow">▼</span></button>
-      <div class="section-lectures open">${lecsHtml || '<div style="padding:10px 35px;font-size:12px;opacity:0.5;">Пусто</div>'}</div>`
-    list.appendChild(sectionEl)
-  })
-}
-
-async function loadLecture(lectureId, btn) {
-  if (activeLectureBtn) activeLectureBtn.classList.remove('active')
-  activeLectureBtn = btn
-  btn.classList.add('active')
-
-  const content = document.getElementById('lecture-content')
-  content.innerHTML = '<div class="lecture-placeholder"><div class="lecture-placeholder-text">Загрузка контента...</div></div>'
-
-  const { data: lecture } = await client.from('lectures').select('*').eq('id', lectureId).single()
-  if (!lecture) return
-
-  try {
-    const response = await fetch(lecture.file_url)
-    const json = await response.json()
-    const { data: res } = await client.from('quiz_results').select('*').eq('user_id', currentUserId).eq('lecture_id', lectureId).single()
-    renderLecture(json, lectureId, res || null)
-  } catch (e) {
-    content.innerHTML = '<div class="lecture-placeholder">Ошибка чтения JSON файла</div>'
-  }
-}
-
-function renderLecture(data, lectureId, existingResult) {
-  const content = document.getElementById('lecture-content')
-  let blocksHtml = ''
-  data.content.forEach(block => {
-    if (block.type === 'heading') blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`
-    else if (block.type === 'paragraph') blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`
-    else if (block.type === 'code') blocksHtml += `<pre class="lecture-block-code">${block.text}</pre>`
-    else if (block.type === 'image') blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="">`
-  })
-
-  const hasQuestions = data.questions && data.questions.length > 0
-  let btnHtml = hasQuestions ? `
-    <button class="start-test-btn" id="start-test-btn" style="${existingResult ? 'background:linear-gradient(to right,#475569,#64748b)' : ''}">
-      ${existingResult ? `📊 Результат (${existingResult.percent}%)` : `🧪 Начать тест (${data.questions.length})`}
-    </button>` : ''
-
-  content.innerHTML = `<div class="lecture-body"><h1>${data.title}</h1>${blocksHtml}</div>${btnHtml}`
-
-  if (hasQuestions) {
-    document.getElementById('start-test-btn').onclick = () => {
-      if (existingResult) showSavedResult(existingResult)
-      else startQuiz(data.questions, lectureId)
+    async function loadSections() {
+        const { data: sections } = await client.from('sections').select('*').order('order')
+        const { data: lectures } = await client.from('lectures').select('*').order('order')
+        allSections = sections || []
+        const list = document.getElementById('sections-list')
+        list.innerHTML = ''
+        let canOpenNext = true
+        sections.forEach(s => {
+            const sLecs = lectures.filter(l => l.section_id === s.id)
+            let lecsHtml = ''
+            sLecs.forEach(l => {
+                const isPassed = userProgress.has(l.id)
+                const isLocked = !canOpenNext && !isTeacher
+                lecsHtml += `<button class="lecture-btn ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `loadLecture('${l.id}', this)`}">
+                    ${isLocked ? '🔒 ' : ''}<span style="flex:1">${l.title}</span>${isPassed ? '✔' : ''}
+                    ${isTeacher ? `<span onclick="event.stopPropagation();prepareEdit('${l.id}')">✏️</span><span onclick="event.stopPropagation();deleteLecture('${l.id}')">🗑️</span>` : ''}
+                </button>`
+                if (!isPassed) canOpenNext = false
+            })
+            list.innerHTML += `<div class="section-item"><button class="section-toggle open" onclick="toggleSection(this)">${s.title}</button><div class="section-lectures open">${lecsHtml}</div></div>`
+        })
     }
-  }
-}
 
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function startQuiz(questions, lectureId) {
-  quizQuestions = questions; quizLectureId = lectureId; quizIndex = 0; quizCorrect = 0; quizWrong = 0; quizSkipped = 0
-  quizOrder = shuffle(questions.map((_, i) => i))
-  document.getElementById('quiz-overlay').classList.add('active')
-  showQuestion()
-}
-
-function showQuestion() {
-  if (quizIndex >= quizOrder.length) { showResults(); return }
-  clearInterval(quizTimer)
-  const q = quizQuestions[quizOrder[quizIndex]]
-  let timeLeft = 20
-  const options = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
-
-  document.getElementById('quiz-box').innerHTML = `
-    <div class="quiz-top"><div>${quizIndex + 1}/${quizOrder.length}</div><div class="quiz-timer" id="quiz-timer">⏱ ${timeLeft}</div></div>
-    <div class="quiz-question">${q.question}</div>
-    <div class="quiz-options">${options.map(opt => `<button class="quiz-option" data-id="${opt.idx}">${opt.text}</button>`).join('')}</div>`
-
-  document.querySelectorAll('.quiz-option').forEach(btn => {
-    btn.onclick = () => { clearInterval(quizTimer); answerQuestion(parseInt(btn.dataset.id), q.answer) }
-  })
-
-  quizTimer = setInterval(() => {
-    timeLeft--; const el = document.getElementById('quiz-timer')
-    if (el) el.textContent = `⏱ ${timeLeft}`
-    if (timeLeft <= 0) { clearInterval(quizTimer); quizSkipped++; quizIndex++; showQuestion() }
-  }, 1000)
-}
-
-function answerQuestion(sel, corr) {
-  if (sel === corr) quizCorrect++; else quizWrong++
-  quizIndex++; showQuestion()
-}
-
-async function showResults() {
-  const total = quizOrder.length
-  const percent = Math.round((quizCorrect / total) * 1000) / 10
-  let reward = quizCorrect * 10
-  if (quizCorrect === total) reward *= 2
-
-  const newMoney = currentMoney + reward
-  await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
-  await client.from('quiz_results').insert({ user_id: currentUserId, lecture_id: quizLectureId, correct: quizCorrect, wrong: quizWrong, total, percent, reward })
-  
-  userProgress.add(quizLectureId) 
-  loadSections() 
-  
-  renderResultsBox({ percent, total, correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped, reward })
-}
-
-function renderResultsBox(r) {
-  document.getElementById('quiz-box').innerHTML = `
-    <div class="quiz-results">
-      <div class="quiz-results-title">Тест завершен!</div>
-      <div class="quiz-results-score">${r.percent}%</div>
-      <div class="quiz-reward">+${r.reward} 🪙</div>
-      <button class="quiz-close-btn" onclick="closeQuiz()">Закрыть</button>
-    </div>`
-}
-
-function closeQuiz() { document.getElementById('quiz-overlay').classList.remove('active') }
-
-async function loadTeacherPassword() {
-  try {
-    const { data } = await client.storage.from('config').download('teacher_password.txt')
-    teacherPassword = (await data.text()).trim()
-  } catch (e) { teacherPassword = null }
-}
-
-function checkTeacherPassword() {
-  const val = document.getElementById('teacher-pass-input').value
-  if (val === teacherPassword) {
-    isTeacher = true; closePasswordModal()
-    document.getElementById('teacher-sidebar-btn').textContent = '✅ Админ-режим'
-    document.getElementById('add-lecture-btn').style.display = 'block'
-    loadSections()
-  } else alert('Неверный пароль')
-}
-
-async function deleteLecture(id) {
-  if (!confirm('Удалить лекцию?')) return
-  await client.from('lectures').delete().eq('id', id)
-  loadSections()
-}
-async function prepareEdit(id) {
-  editingLectureId = id;
-  const { data: lec } = await client.from('lectures').select('*').eq('id', id).single();
-
-  const res = await fetch(lec.file_url);
-  const jsonContent = await res.json();
-
-  openAddModal();
-  document.getElementById('modal-title-text').textContent = '📝 Редактирование лекции';
-  document.getElementById('lecture-title-input').value = lec.title;
-  document.getElementById('section-select').value = lec.section_id;
-
-  document.getElementById('file-drop-zone').style.display = 'none';
-
-  let editor = document.getElementById('json-editor');
-  if (!editor) {
-    editor = document.createElement('textarea');
-    editor.id = 'json-editor';
-    editor.className = 'edit-area';
-    document.getElementById('preview-wrap').before(editor);
-  }
-  editor.style.display = 'block';
-  editor.value = JSON.stringify(jsonContent, null, 2); 
-  
-  document.getElementById('add-confirm-btn').textContent = 'Сохранить изменения';
-}
-
-async function addLecture() {
-  const title = document.getElementById('lecture-title-input').value.trim();
-  const sectionId = document.getElementById('section-select').value;
-  const btn = document.getElementById('add-confirm-btn');
-  const editor = document.getElementById('json-editor');
-
-  if (!title || !sectionId) return alert('Заполни поля!');
-  btn.disabled = true;
-
-  let fileUrl = null;
-
-  if (editingLectureId && editor && editor.style.display !== 'none') {
-    try {
-      const updatedJson = JSON.parse(editor.value);
-      const blob = new Blob([JSON.stringify(updatedJson)], { type: 'application/json' });
-      const fileName = `updated_${Date.now()}.json`;
-      
-      await client.storage.from('lectures').upload(fileName, blob);
-      fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
-    } catch (e) {
-      alert("Ошибка в формате текста! Проверь запятые и скобки.");
-      btn.disabled = false;
-      return;
+    async function loadLecture(id, btn) {
+        document.querySelectorAll('.lecture-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        const { data: lec } = await client.from('lectures').select('*').eq('id', id).single()
+        const res = await fetch(lec.file_url); const json = await res.json()
+        const { data: result } = await client.from('quiz_results').select('*').eq('user_id', currentUserId).eq('lecture_id', id).single()
+        renderLecture(json, id, result)
     }
-  } 
 
-  else if (selectedJsonFile) {
-    const fileName = `${Date.now()}_${selectedJsonFile.name}`;
-    await client.storage.from('lectures').upload(fileName, selectedJsonFile);
-    fileUrl = client.storage.from('lectures').getPublicUrl(fileName).data.publicUrl;
-  }
+    function renderLecture(data, id, res) {
+        let content = `<h1>${data.title}</h1>`
+        data.content.forEach(b => {
+            if (b.type === 'heading') content += `<h2>${b.text}</h2>`
+            else if (b.type === 'paragraph') content += `<p>${b.text}</p>`
+            else if (b.type === 'code') content += `<pre>${b.text}</pre>`
+            else if (b.type === 'image') content += `<img src="${b.src}" style="max-width:100%">`
+        })
+        content += `<button class="start-test-btn" onclick="startQuiz(${JSON.stringify(data.questions).replace(/"/g, '&quot;')}, '${id}')">${res ? '📊 Результат: ' + res.percent + '%' : '🧪 Начать тест'}</button>`
+        document.getElementById('lecture-content').innerHTML = content
+    }
 
-  if (editingLectureId) {
-    const upData = { title, section_id: sectionId };
-    if (fileUrl) upData.file_url = fileUrl;
-    await client.from('lectures').update(upData).eq('id', editingLectureId);
-  } else {
-    if (!fileUrl) { alert('Выбери файл!'); btn.disabled = false; return; }
-    await client.from('lectures').insert({ title, section_id: sectionId, file_url: fileUrl, order: 99 });
-  }
+    function startQuiz(q, id) {
+        quizQuestions = q; quizLectureId = id; quizIndex = 0; quizCorrect = 0; quizWrong = 0; quizSkipped = 0
+        quizOrder = Array.from({length: q.length}, (_, i) => i).sort(() => Math.random() - 0.5)
+        document.getElementById('quiz-overlay').classList.add('active'); showQuestion()
+    }
 
-  editingLectureId = null;
-  if (editor) editor.style.display = 'none';
-  document.getElementById('file-drop-zone').style.display = 'block';
-  closeAddModal();
-  loadSections();
-  btn.disabled = false;
-}
+    function showQuestion() {
+        if (quizIndex >= quizOrder.length) return showResults()
+        const q = quizQuestions[quizOrder[quizIndex]]; let time = 20
+        document.getElementById('quiz-box').innerHTML = `<div>${quizIndex + 1}/${quizOrder.length} <span id="q-timer">20</span></div><h3>${q.question}</h3>`
+        q.options.forEach((opt, i) => {
+            document.getElementById('quiz-box').innerHTML += `<button class="quiz-option" onclick="answer(${i}, ${q.answer})">${opt}</button>`
+        })
+        clearInterval(quizTimer)
+        quizTimer = setInterval(() => {
+            time--; document.getElementById('q-timer').textContent = time
+            if (time <= 0) { clearInterval(quizTimer); quizSkipped++; quizIndex++; showQuestion() }
+        }, 1000)
+    }
 
+    function answer(s, c) { clearInterval(quizTimer); if (s === c) quizCorrect++; else quizWrong++; quizIndex++; showQuestion() }
 
-function toggleSection(btn) { btn.nextElementSibling.classList.toggle('open') }
-function toggleDropdown(e) { e.stopPropagation(); document.getElementById('profile-btn').classList.toggle('open') }
-function openPasswordModal() { document.getElementById('password-modal').classList.add('active') }
-function closePasswordModal() { document.getElementById('password-modal').classList.remove('active') }
-function openAddModal() { 
-  document.getElementById('add-modal').classList.add('active')
-  const sel = document.getElementById('section-select')
-  sel.innerHTML = '<option value="">Выберите раздел</option>' + allSections.map(s => `<option value="${s.id}">${s.title}</option>`).join('')
-}
-function closeAddModal() { document.getElementById('add-modal').classList.remove('active'); editingLectureId = null }
-function onFileSelected() { selectedJsonFile = document.getElementById('json-file-input').files[0] }
-async function logout() { await client.auth.signOut(); window.location.href = 'index.html' }
+    async function showResults() {
+        const p = Math.round((quizCorrect / quizQuestions.length) * 100); let r = quizCorrect * 10
+        await client.from('profiles').update({ money: currentMoney + r }).eq('id', currentUserId)
+        await client.from('quiz_results').insert({ user_id: currentUserId, lecture_id: quizLectureId, percent: p, reward: r })
+        document.getElementById('quiz-box').innerHTML = `<h2>Итог: ${p}%</h2><p>Монеты: +${r}</p><button onclick="location.reload()">Закрыть</button>`
+    }
 
-init()
+    async function prepareEdit(id) {
+        editingLectureId = id; const { data: lec } = await client.from('lectures').select('*').eq('id', id).single()
+        const res = await fetch(lec.file_url); const json = await res.json()
+        openAddModal(); document.getElementById('modal-title-text').textContent = '📝 Редактор'
+        document.getElementById('lecture-title-input').value = lec.title; document.getElementById('section-select').value = lec.section_id
+        document.getElementById('file-drop-zone').style.display = 'none'
+        let ed = document.getElementById('json-editor')
+        if (!ed) { ed = document.createElement('textarea'); ed.id = 'json-editor'; document.getElementById('preview-wrap').before(ed) }
+        ed.style.display = 'block'; ed.value = JSON.stringify(json, null, 2)
+    }
+
+    async function addLecture() {
+        const t = document.getElementById('lecture-title-input').value, s = document.getElementById('section-select').value, ed = document.getElementById('json-editor')
+        let url = null
+        if (editingLectureId && ed?.style.display !== 'none') {
+            const blob = new Blob([ed.value], {type: 'application/json'}); const fn = `upd_${Date.now()}.json`
+            await client.storage.from('lectures').upload(fn, blob); url = client.storage.from('lectures').getPublicUrl(fn).data.publicUrl
+        } else if (selectedJsonFile) {
+            const fn = `${Date.now()}_${selectedJsonFile.name}`
+            await client.storage.from('lectures').upload(fn, selectedJsonFile); url = client.storage.from('lectures').getPublicUrl(fn).data.publicUrl
+        }
+        if (editingLectureId) await client.from('lectures').update({ title: t, section_id: s, ...(url && {file_url: url}) }).eq('id', editingLectureId)
+        else await client.from('lectures').insert({ title: t, section_id: s, file_url: url, order: 99 })
+        location.reload()
+    }
+
+    async function deleteLecture(id) { if (confirm('Удалить?')) { await client.from('lectures').delete().eq('id', id); loadSections() } }
+    async function loadTeacherPassword() { const { data } = await client.storage.from('config').download('teacher_password.txt'); if (data) teacherPassword = (await data.text()).trim() }
+    function checkTeacherPassword() { if (document.getElementById('teacher-pass-input').value === teacherPassword) { isTeacher = true; closePasswordModal(); document.getElementById('add-lecture-btn').style.display = 'block'; loadSections() } }
+    function toggleSection(b) { b.nextElementSibling.classList.toggle('open') }
+    function toggleDropdown(e) { e.stopPropagation(); document.getElementById('profile-btn').classList.toggle('open') }
+    function openPasswordModal() { document.getElementById('password-modal').classList.add('active') }
+    function closePasswordModal() { document.getElementById('password-modal').classList.remove('active') }
+    function openAddModal() { document.getElementById('add-modal').classList.add('active'); const sel = document.getElementById('section-select'); sel.innerHTML = allSections.map(s => `<option value="${s.id}">${s.title}</option>`).join('') }
+    function closeAddModal() { document.getElementById('add-modal').classList.remove('active'); editingLectureId = null }
+    function onFileSelected() { selectedJsonFile = document.getElementById('json-file-input').files[0] }
+    async function logout() { await client.auth.signOut(); window.location.href = 'index.html' }
+
+    init()
 </script>
 </body>
 </html>
