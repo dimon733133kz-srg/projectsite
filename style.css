@@ -2339,4 +2339,64 @@ body.dark input, body.dark select, body.dark textarea {
     margin-bottom: 15px;
 }
 
+.lecture-body h1 { font-size: 28px; margin-bottom: 20px; color: var(--accent); }
+
+.lecture-block-heading {
+    font-size: 20px; font-weight: 700; margin: 25px 0 10px; color: var(--text-primary);
+}
+
+.lecture-block-paragraph {
+    line-height: 1.6; margin-bottom: 15px; color: var(--text-secondary);
+}
+
+.lecture-block-code {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 10px;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    overflow-x: auto;
+    margin: 15px 0;
+    border-left: 4px solid #4ade80;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.lecture-block-image {
+    width: 100%; max-width: 800px; border-radius: 12px; margin: 20px 0;
+    display: block; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+body.dark .modal-box {
+    background: #111827 !important;
+    color: #e5e7eb !important;
+    border: 1px solid #374151;
+    width: 90%; 
+    max-width: 900px;
+}
+
+#json-editor {
+    width: 100%;
+    min-height: 500px; 
+    margin-top: 15px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    padding: 15px;
+    background: #000000 !important; 
+    color: #4ade80 !important; 
+    border: 1px solid #374151;
+    border-radius: 8px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+body.dark .modal-label { color: #9ca3af; font-weight: 600; }
+body.dark input, body.dark select {
+    background: #1f2937 !important;
+    color: white !important;
+    border: 1px solid #374151 !important;
+}
+
+#json-editor::-webkit-scrollbar { width: 8px; }
+#json-editor::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+  
 /* как же я ебал это всё с нуля переделывать но вот переделал лекции*/
