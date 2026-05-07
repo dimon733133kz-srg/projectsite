@@ -2398,5 +2398,68 @@ body.dark input, body.dark select {
 
 #json-editor::-webkit-scrollbar { width: 8px; }
 #json-editor::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+
+
+.lecture-block-code {
+    background: #1e1e1e !important;
+    color: #4ade80 !important; 
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 15px 0;
+    border-left: 4px solid #4ade80;
+    display: block;
+    white-space: pre-wrap; 
+    word-break: break-all;
+}
+
+body.dark .modal-overlay {
+    background: rgba(0, 0, 0, 0.8) !important;
+}
+
+body.dark .modal-box, 
+body.dark .modal-content {
+    background: #111827 !important;
+    color: #f3f4f6 !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+
+body.dark input[type="text"], 
+body.dark input[type="password"], 
+body.dark select, 
+body.dark textarea {
+    background: #1f2937 !important;
+    color: #ffffff !important;
+    border: 1px solid #4b5563 !important;
+    padding: 10px;
+}
+
+body.dark #json-editor {
+    background: #000000 !important;
+    color: #4ade80 !important;
+    border: 1px solid #4ade80 !important;
+    width: 100%;
+    min-height: 500px;
+    font-family: monospace;
+}
+  
+body.dark .modal-btn.cancel {
+    background: #374151 !important;
+    color: white !important;
+}
+
+body.dark .modal-label {
+    color: #9ca3af !important;
+}
+
+body.dark .file-drop-zone {
+    border: 2px dashed #4b5563 !important;
+    background: #1f2937 !important;
+    color: #9ca3af !important;
+}
   
 /* как же я ебал это всё с нуля переделывать но вот переделал лекции*/
