@@ -99,69 +99,63 @@
   </div>
 
   <div class="modal-overlay" id="add-modal">
-    <div class="modal-box">
-      <div class="modal-title">➕ Добавить лекцию</div>
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title-text">➕ Добавить лекцию</div>
 
-      <div class="modal-label">Название лекции</div>
-      <input type="text" id="lecture-title-input" placeholder="Например: Введение в Python">
+    <div class="modal-label">Название лекции</div>
+    <input type="text" id="lecture-title-input" placeholder="Например: Введение в Python">
 
-      <div class="modal-label">Раздел</div>
-      <select id="section-select" onchange="onSectionChange()">
-        <option value="">Загрузка...</option>
-        <option value="__new__">+ Создать новый раздел</option>
-      </select>
+    <div class="modal-label">Раздел</div>
+    <select id="section-select" onchange="onSectionChange()">
+      <option value="">Загрузка...</option>
+      <option value="__new__">+ Создать новый раздел</option>
+    </select>
 
-      <div id="new-section-wrap" style="display:none;">
-        <div class="modal-label">Название нового раздела</div>
-        <input type="text" id="new-section-input" placeholder="Например: Раздел 1. Основы">
-      </div>
+    <div id="new-section-wrap" style="display:none;">
+      <div class="modal-label">Название нового раздела</div>
+      <input type="text" id="new-section-input" placeholder="Например: Раздел 1. Основы">
+    </div>
 
-      <div class="modal-label">JSON файл лекции</div>
-      <div class="file-drop-zone" id="file-drop-zone" onclick="document.getElementById('json-file-input').click()">
-        📄 Нажми чтобы выбрать .json файл
-      </div>
-      <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="onFileSelected()">
+    <div class="modal-label">JSON файл лекции</div>
+    
+    <div class="file-drop-zone" id="file-drop-zone" onclick="document.getElementById('json-file-input').click()">
+      📄 Нажми чтобы выбрать или заменить .json файл
+    </div>
+    <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="onFileSelected()">
 
-      <div id="preview-wrap" style="display:none;">
-        <div class="modal-label">Превью</div>
-        <div class="preview-box" id="preview-box"></div>
-      </div>
+    <div id="preview-wrap" style="display:none;">
+      <div class="modal-label">Превью файла</div>
+      <div class="preview-box" id="preview-box"></div>
+    </div>
 
-      <details style="cursor:pointer;">
-        <summary style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">
-          📋 Формат JSON файла
-        </summary>
-        <div class="format-hint">
-          Файл должен содержать поля <b>title</b>, <b>description</b>, <b>content</b> и <b>questions</b>.
-          <pre>{
-  "title": "Название лекции",
-  "description": "Краткое описание",
-  "content": [
-    { "type": "heading", "text": "Заголовок" },
-    { "type": "paragraph", "text": "Текст" },
-    { "type": "code", "text": "print('hello')" },
-    { "type": "image", "src": "url", "alt": "описание" }
-  ],
-  "questions": [
-    {
-      "question": "Вопрос?",
-      "options": ["А", "Б", "В", "Г"],
-      "answer": 0
-    }
-  ]
+    <details style="cursor:pointer; margin-top: 15px;">
+      <summary style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">
+        📋 Справка: Формат JSON
+      </summary>
+      <div class="format-hint" style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 5px;">
+        Файл должен содержать: <b>title</b>, <b>content</b> (массив блоков) и <b>questions</b> (тест).
+        <pre style="white-space: pre-wrap; margin-top: 5px;">{
+"title": "Название",
+"content": [
+  { "type": "paragraph", "text": "Текст..." }
+],
+"questions": [
+  { "question": "2+2?", "options": ["3","4"], "answer": 1 }
+]
 }</pre>
-        </div>
-      </details>
-
-      <div class="modal-err" id="add-err"></div>
-      <div class="modal-success" id="add-success"></div>
-
-      <div class="modal-btns">
-        <button class="modal-btn cancel" onclick="closeAddModal()">Отмена</button>
-        <button class="modal-btn confirm" id="add-confirm-btn" onclick="addLecture()">Добавить лекцию</button>
       </div>
+    </details>
+
+    <div class="modal-err" id="add-err"></div>
+    <div class="modal-success" id="add-success"></div>
+
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeAddModal()">Отмена</button>
+      <!-- Основная кнопка с ID для смены текста -->
+      <button class="modal-btn confirm" id="add-confirm-btn" onclick="addLecture()">Добавить лекцию</button>
     </div>
   </div>
+</div>
  <script>
 const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
