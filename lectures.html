@@ -272,28 +272,51 @@ async function loadLecture(lectureId, btn) {
 }
 
 function renderLecture(data, lectureId, existingResult) {
-  const content = document.getElementById('lecture-content')
-  let blocksHtml = ''
-  data.content.forEach(block => {
-    if (block.type === 'heading') blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`
-    else if (block.type === 'paragraph') blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`
-    else if (block.type === 'code') blocksHtml += `<pre class="lecture-block-code">${block.text}</pre>`
-    else if (block.type === 'image') blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="">`
-  })
+  const content = document.getElementById('lecture-content');
+  let blocksHtml = '';
 
-  const hasQuestions = data.questions && data.questions.length > 0
+  if (data.content && Array.isArray(data.content)) {
+    data.content.forEach(block => {
+      switch(block.type) {
+        case 'heading':
+          blocksHtml += `<div class="lecture-block-heading">${block.text}</div>`;
+          break;
+        case 'paragraph':
+          blocksHtml += `<div class="lecture-block-paragraph">${block.text}</div>`;
+          break;
+        case 'code':
+          blocksHtml += `<pre class="lecture-block-code"><code>${block.text}</code></pre>`;
+          break;
+        case 'image':
+          blocksHtml += `<img class="lecture-block-image" src="${block.src}" alt="${block.alt || ''}">`;
+          break;
+      }
+    });
+  }
+
+  const hasQuestions = data.questions && data.questions.length > 0;
   let btnHtml = hasQuestions ? `
-    <button class="start-test-btn" id="start-test-btn" style="${existingResult ? 'background:linear-gradient(to right,#475569,#64748b)' : ''}">
-      ${existingResult ? `📊 Результат (${existingResult.percent}%)` : `🧪 Начать тест (${data.questions.length})`}
-    </button>` : ''
+    <button class="start-test-btn" id="start-test-btn" style="${existingResult ? 'background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary);' : ''}">
+      ${existingResult ? `📊 Результат: ${existingResult.percent}%` : `🧪 Начать тест (${data.questions.length} вопр.)`}
+    </button>` : '';
 
-  content.innerHTML = `<div class="lecture-body"><h1>${data.title}</h1>${blocksHtml}</div>${btnHtml}`
+  content.innerHTML = `
+    <div class="lecture-body">
+      <h1>${data.title || 'Без названия'}</h1>
+      <p style="opacity: 0.7; margin-bottom: 20px;">${data.description || ''}</p>
+      ${blocksHtml}
+    </div>
+    ${btnHtml}
+  `;
 
   if (hasQuestions) {
     document.getElementById('start-test-btn').onclick = () => {
-      if (existingResult) showSavedResult(existingResult)
-      else startQuiz(data.questions, lectureId)
-    }
+      if (existingResult) {
+          alert(`Вы уже прошли этот тест на ${existingResult.percent}%.\nПравильных: ${existingResult.correct} из ${existingResult.total}`);
+      } else {
+          startQuiz(data.questions, lectureId);
+      }
+    };
   }
 }
 
@@ -393,28 +416,28 @@ async function deleteLecture(id) {
 async function prepareEdit(id) {
   editingLectureId = id;
   const { data: lec } = await client.from('lectures').select('*').eq('id', id).single();
-
-  const res = await fetch(lec.file_url);
-  const jsonContent = await res.json();
+  
+  const response = await fetch(lec.file_url);
+  const jsonContent = await response.json();
 
   openAddModal();
-  document.getElementById('modal-title-text').textContent = '📝 Редактирование лекции';
+  
+  document.getElementById('modal-title-text').textContent = '📝 Вики-редактор лекции';
   document.getElementById('lecture-title-input').value = lec.title;
   document.getElementById('section-select').value = lec.section_id;
-
+  
   document.getElementById('file-drop-zone').style.display = 'none';
-
+  
   let editor = document.getElementById('json-editor');
   if (!editor) {
     editor = document.createElement('textarea');
     editor.id = 'json-editor';
-    editor.className = 'edit-area';
     document.getElementById('preview-wrap').before(editor);
   }
   editor.style.display = 'block';
   editor.value = JSON.stringify(jsonContent, null, 2); 
-  
-  document.getElementById('add-confirm-btn').textContent = 'Сохранить изменения';
+
+  document.getElementById('add-confirm-btn').textContent = 'Сохранить и обновить контент';
 }
 
 async function addLecture() {
