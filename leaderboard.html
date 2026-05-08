@@ -135,14 +135,31 @@ async function init() {
     render()
 }
 
+
+function setMode(m, btn) {
+    mode = m
+    document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    render()
+}
+
+function setSort(s, btn) {
+    sortType = s
+    document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    render()
+}
+
 function render() {
     let users = [...allUsers]
-  
+
     if (mode === 'groups') {
         const best = {}
         users.forEach(u => {
             const val = sortType === 'streak' ? 'win_streak' : 'wins'
-            if (!best[u.group] || (u[val] || 0) > (best[u.group][val] || 0)) best[u.group] = u
+            if (!best[u.group] || (u[val] || 0) > (best[u.group][val] || 0)) {
+                best[u.group] = u
+            }
         })
         users = Object.values(best)
     }
@@ -151,17 +168,29 @@ function render() {
         users = users.filter(u => u.group === currentUser.group)
     }
 
-    users.sort((a, b) => sortType === 'streak'
-        ? (b.win_streak ?? 0) - (a.win_streak ?? 0)
-        : (b.wins ?? 0) - (a.wins ?? 0))
+    users.sort((a, b) => {
+        const valA = sortType === 'streak' ? (a.win_streak ?? 0) : (a.wins ?? 0)
+        const valB = sortType === 'streak' ? (b.win_streak ?? 0) : (b.wins ?? 0)
+        return valB - valA
+    })
 
     const container = document.getElementById('leaders-list')
     container.innerHTML = ''
 
+    if (users.length === 0) {
+        container.innerHTML = '<div class="empty-state">Пока никого нет</div>'
+        return
+    }
+
     users.forEach((u, index) => {
         const isMe = currentUser && u.name === currentUser.name && u.group === currentUser.group
-        let rankClass = index === 0 ? 'rank-gold' : index === 1 ? 'rank-silver' : index === 2 ? 'rank-bronze' : '';
-        let rankLabel = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`;
+        
+        let rankClass = ''
+        let rankLabel = ''
+        if (index === 0) { rankClass = 'rank-gold'; rankLabel = '🥇' }
+        else if (index === 1) { rankClass = 'rank-silver'; rankLabel = '🥈' }
+        else if (index === 2) { rankClass = 'rank-bronze'; rankLabel = '🥉' }
+        else rankLabel = `${index + 1}`
 
         const el = document.createElement('div')
         el.className = `leader-card ${rankClass} ${isMe ? 'leader-card-me' : ''}`
@@ -173,7 +202,7 @@ function render() {
                 <div class="leader-left">
                     <div class="leader-rank">${rankLabel}</div>
                     <div class="leader-avatar">
-                        <img src="${u.profile_avatar || 'icons/profile-default.png'}">
+                        <img src="${u.profile_avatar || 'icons/profile-default.png'}" alt="${u.name}">
                     </div>
                     <div class="leader-text">
                         <div class="leader-name">${u.name}</div>
@@ -205,7 +234,7 @@ function render() {
             }
             if (cardAudio) {
                 currentAudio = cardAudio;
-                currentAudio.play().catch(() => {});
+                currentAudio.play().catch(() => { /* тут игнор автоплея */ });
             }
         };
 
