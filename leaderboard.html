@@ -78,104 +78,93 @@
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
 
-    const { createClient } = supabase
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+const { createClient } = supabase
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }  
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark')
+}  
 
-    let allUsers = []
-    let currentUser = null
-    let mode = 'all'
-    let sortType = 'streak'
+let allUsers = []
+let currentUser = null
+let mode = 'all'
+let sortType = 'streak'
+let currentAudio = null 
+async function init() {
+    const { data: { session } } = await client.auth.getSession()
+    if (!session) { window.location.href = 'index.html'; return }
 
-    async function init() {
-      const { data: { session } } = await client.auth.getSession()
-      if (!session) { window.location.href = 'index.html'; return }
-
-      const { data: me } = await client
+    const { data: me } = await client
         .from('profiles')
         .select('name, "group", profile_bg, profile_avatar, wins, win_streak')
         .eq('id', session.user.id)
         .single()
 
-      currentUser = me
+    currentUser = me
 
-      document.getElementById('profile-name').textContent = me.name
-      document.getElementById('wins-count').textContent = me.wins ?? 0
-      document.getElementById('streak-count').textContent = me.win_streak ?? 0
+    document.getElementById('profile-name').textContent = me.name
+    document.getElementById('wins-count').textContent = me.wins ?? 0
+    document.getElementById('streak-count').textContent = me.win_streak ?? 0
 
-      if (me.profile_avatar) document.getElementById('profile-avatar-img').src = me.profile_avatar
+    if (me.profile_avatar) document.getElementById('profile-avatar-img').src = me.profile_avatar
 
-      if (me.profile_bg) {
-  const btn = document.getElementById('profile-btn')
-  btn.style.backgroundImage = `url('${me.profile_bg}')`
+    if (me.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${me.profile_bg}')`
+        btn.classList.add('has-bg')
+    }
 
-  const img = document.createElement('img')
-  img.src = me.profile_bg
-  img.style.position = 'absolute'
-  img.style.inset = '0'
-  img.style.width = '100%'
-  img.style.height = '100%'
-  img.style.objectFit = 'contain'
-  img.style.zIndex = '0'
+    const { data } = await client
+        .from('profiles')
+        .select('name, "group", profile_bg, profile_avatar, wins, win_streak, audio_url')
 
-  btn.appendChild(img)
-  btn.classList.add('has-bg')
+    allUsers = data || []
+    render()
 }
 
-      const { data } = await client
-        .from('profiles')
-        .select('name, "group", profile_bg, profile_avatar, wins, win_streak')
+function setMode(m, btn) {
+    mode = m
+    document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    render()
+}
 
-      allUsers = data || []
-      render()
-    }
+function setSort(s, btn) {
+    sortType = s
+    document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    render()
+}
 
-    function setMode(m, btn) {
-      mode = m
-      document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-      render()
-    }
+function render() {
+    let users = [...allUsers]
 
-    function setSort(s, btn) {
-      sortType = s
-      document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-      render()
-    }
-
-    function render() {
-      let users = [...allUsers]
-
-      if (mode === 'groups') {
+    if (mode === 'groups') {
         const best = {}
         users.forEach(u => {
-          const val = sortType === 'streak' ? 'win_streak' : 'wins'
-          if (!best[u.group] || u[val] > best[u.group][val]) best[u.group] = u
+            const val = sortType === 'streak' ? 'win_streak' : 'wins'
+            if (!best[u.group] || u[val] > best[u.group][val]) best[u.group] = u
         })
         users = Object.values(best)
-      }
+    }
 
-      if (mode === 'my' && currentUser) {
+    if (mode === 'my' && currentUser) {
         users = users.filter(u => u.group === currentUser.group)
-      }
+    }
 
-      users.sort((a, b) => sortType === 'streak'
+    users.sort((a, b) => sortType === 'streak'
         ? (b.win_streak ?? 0) - (a.win_streak ?? 0)
         : (b.wins ?? 0) - (a.wins ?? 0))
 
-      const container = document.getElementById('leaders-list')
-      container.innerHTML = ''
+    const container = document.getElementById('leaders-list')
+    container.innerHTML = ''
 
-      if (users.length === 0) {
+    if (users.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><div class="empty-state-text">Пока никого нет</div></div>'
         return
-      }
+    }
 
-      users.forEach((u, index) => {
+    users.forEach((u, index) => {
         const isMe = currentUser && u.name === currentUser.name && u.group === currentUser.group
 
         let rankClass = ''
@@ -190,50 +179,72 @@
         if (u.profile_bg) el.style.backgroundImage = `url('${u.profile_bg}')`
 
         el.innerHTML = `
-          <div class="leader-overlay"></div>
-          <div class="leader-inner">
-            <div class="leader-left">
-              <div class="leader-rank">${rankLabel}</div>
-              <div class="leader-avatar">
-                <img src="${u.profile_avatar || 'icons/profile-default.png'}" alt="${u.name}">
-              </div>
-              <div class="leader-text">
-                <div class="leader-name">${u.name}</div>
-                <div class="leader-group">${u.group}</div>
-              </div>
-            </div>
-            <div class="leader-stats">
-              <div class="stat-badge streak">
-                <img src="icons/streak.png" alt="Стрик">
-                <span>${u.win_streak ?? 0}</span>
-              </div>
-              <div class="stat-badge wins">
-                <img src="icons/wins.png" alt="Победы">
-                <span>${u.wins ?? 0}</span>
-              </div>
-            </div>
-          </div>`
+            <div class="leader-overlay"></div>
+            <div class="leader-inner">
+                <div class="leader-left">
+                    <div class="leader-rank">${rankLabel}</div>
+                    <div class="leader-avatar">
+                        <img src="${u.profile_avatar || 'icons/profile-default.png'}" alt="${u.name}">
+                    </div>
+                    <div class="leader-text">
+                        <div class="leader-name">${u.name}</div>
+                        <div class="leader-group">${u.group}</div>
+                    </div>
+                </div>
+                <div class="leader-stats">
+                    <div class="stat-badge streak">
+                        <img src="icons/streak.png" alt="Стрик">
+                        <span>${u.win_streak ?? 0}</span>
+                    </div>
+                    <div class="stat-badge wins">
+                        <img src="icons/wins.png" alt="Победы">
+                        <span>${u.wins ?? 0}</span>
+                    </div>
+                </div>
+            </div>`
+
+        let cardAudio = null;
+        if (u.audio_url) {
+            cardAudio = new Audio(u.audio_url);
+            cardAudio.preload = 'auto'; 
+        }
+
+        el.onmouseenter = () => {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            if (cardAudio) {
+                currentAudio = cardAudio;
+                currentAudio.play().catch(() => {
+                    console.log("Автоплей заблокирован браузером до клика");
+                });
+            } else {
+                currentAudio = null;
+            }
+        };
 
         container.appendChild(el)
-      })
-    }
-
-    function toggleDropdown(e) {
-      e.stopPropagation()
-      document.getElementById('profile-btn').classList.toggle('open')
-    }
-
-    document.addEventListener('click', function(e) {
-      const profile = document.getElementById('profile-btn')
-      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
     })
+}
 
-    async function logout() {
-      await client.auth.signOut()
-      window.location.href = 'index.html'
-    }
+function toggleDropdown(e) {
+    e.stopPropagation()
+    document.getElementById('profile-btn').classList.toggle('open')
+}
 
-    init()
+document.addEventListener('click', function(e) {
+    const profile = document.getElementById('profile-btn')
+    if (profile && !profile.contains(e.target)) profile.classList.remove('open')
+})
+
+async function logout() {
+    await client.auth.signOut()
+    window.location.href = 'index.html'
+}
+
+init()
   </script>
 
 </body>
