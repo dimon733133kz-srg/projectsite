@@ -111,10 +111,24 @@ let currentCategory = 'background'
 let ownedIds = []
 let activeBg = null
 let activeAvatar = null
+let shopSounds = {}
+let currentAudio = null
 
 async function init() {
   const { data: { session } } = await client.auth.getSession()
   if (!session) { window.location.href = 'index.html'; return }
+
+  const { data: shopItemsData } = await client
+    .from('shop_items')
+    .select('image_url, audio_url')
+  
+  if (shopItemsData) {
+    shopItemsData.forEach(item => {
+      if (item.image_url && item.audio_url) {
+        shopSounds[item.image_url] = item.audio_url
+      }
+    })
+  }
 
   const { data, error } = await client
     .from('profiles')
@@ -148,10 +162,8 @@ async function init() {
 function updateProfileBgDisplay(url) {
   const btn = document.getElementById('profile-btn');
   if (!btn) return;
-
   const existingImgs = btn.querySelectorAll('img:not(#profile-avatar-img)');
   existingImgs.forEach(el => el.remove());
-
   if (url) {
     btn.style.backgroundImage = `url('${url}')`;
     btn.style.backgroundSize = 'cover';
@@ -164,7 +176,6 @@ function updateProfileBgDisplay(url) {
     img.style.height = '100%';
     img.style.objectFit = 'contain'; 
     img.style.zIndex = '0';
-    
     btn.appendChild(img);
     btn.classList.add('has-bg');
   } else {
@@ -211,19 +222,15 @@ async function loadItems() {
 async function loadShopItems() {
   const grid = document.getElementById('items-grid')
   grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
-
   const { data: cases, error } = await client.from('cases').select('*')
-
   if (error || !cases || cases.length === 0) {
     grid.innerHTML = `<div class="empty-state">Нет доступных кейсов</div>`
     return
   }
-
   grid.innerHTML = ''
   for (const c of cases) {
     const { data: items } = await client.from('shop_items').select('*').eq('case_id', c.id)
     if (!items || !items.some(i => i.type === currentCategory)) continue
-
     grid.innerHTML += `
       <div class="item-card">
         ${c.image_url ? `<img class="item-img" src="${c.image_url}">` : `<div class="item-img-placeholder">📦</div>`}
@@ -242,58 +249,64 @@ async function loadShopItems() {
 async function loadInventory() {
   const grid = document.getElementById('items-grid')
   grid.innerHTML = '<p style="color:#94a3b8;padding:20px">Загрузка...</p>'
-
   const { data: ownedData } = await client
     .from('owned_avatars')
     .select('item_id')
     .eq('user_id', currentUser.id)
     .eq('type', currentCategory)
-
   const ownedOfType = ownedData ? ownedData.map(d => d.item_id) : []
-
   if (ownedOfType.length === 0) {
     grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎒</div><div class="empty-state-text">Инвентарь пуст</div></div>`
     return
   }
-
   const { data, error } = await client.from('shop_items').select('*').in('id', ownedOfType)
   if (error || !data) { grid.innerHTML = 'Ошибка загрузки'; return }
-
   grid.innerHTML = ''
   data.forEach(item => {
     const isEquipped = currentCategory === 'background' ? activeBg === item.image_url : activeAvatar === item.image_url
-    grid.innerHTML += `
-      <div class="item-card">
-        <img class="item-img" src="${item.image_url || ''}">
-        <div class="item-info">
-          <div class="item-name">${item.name}</div>
-          ${isEquipped 
-            ? `<button class="item-btn equipped" disabled>✨ Активно</button>
-               <button class="item-btn unequip" onclick="unequipItem('${item.type}')">Снять</button>`
-            : `<button class="item-btn equip" onclick="equipItem('${item.image_url}', '${item.name}', '${item.type}')">Надеть</button>`}
-        </div>
-      </div>`
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    const img = document.createElement('img');
+    img.className = 'item-img';
+    img.src = item.image_url || '';
+    const soundUrl = shopSounds[item.image_url];
+    if (soundUrl) {
+      const audio = new Audio(soundUrl);
+      audio.preload = 'auto';
+      img.onmouseenter = () => {
+        if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+        currentAudio = audio;
+        currentAudio.play().catch(() => {});
+      };
+      img.onmouseleave = () => {
+        audio.pause();
+        audio.currentTime = 0;
+        if (currentAudio === audio) currentAudio = null;
+      };
+    }
+    const info = document.createElement('div');
+    info.className = 'item-info';
+    info.innerHTML = `
+      <div class="item-name">${item.name}</div>
+      ${isEquipped 
+        ? `<button class="item-btn equipped" disabled>✨ Активно</button>
+           <button class="item-btn unequip" onclick="unequipItem('${item.type}')">Снять</button>`
+        : `<button class="item-btn equip" onclick="equipItem('${item.image_url}', '${item.name}', '${item.type}')">Надеть</button>`}
+    `;
+    card.appendChild(img);
+    card.appendChild(info);
+    grid.appendChild(card);
   })
 }
 
 async function handleOpenCase(caseId, price) {
   const { data: profile } = await client.from('profiles').select('money').eq('id', currentUser.id).single();
   if (profile.money < price) { showToast('Недостаточно монет!', 'error'); return; }
-
-  const { error: mErr } = await client.from('profiles').update({ money: profile.money - price }).eq('id', currentUser.id);
-  if (mErr) return;
-
+  await client.from('profiles').update({ money: profile.money - price }).eq('id', currentUser.id);
   document.getElementById('user-money').textContent = profile.money - price;
-  
   const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
   const win = rollItem(items);
-  
-  await client.from('owned_avatars').insert({ 
-    user_id: currentUser.id, 
-    item_id: win.id, 
-    type: win.type 
-  });
-
+  await client.from('owned_avatars').insert({ user_id: currentUser.id, item_id: win.id, type: win.type });
   startRouletteAnimation(items, win);
 }
 
@@ -311,72 +324,13 @@ function rollItem(items) {
 async function openCasePreview(caseId) {
   const { data: items } = await client.from('shop_items').select('*').eq('case_id', caseId);
   if (!items) return;
-  
   const total = items.reduce((sum, i) => sum + (i.chance || 0), 0);
-  
-  let html = `
-    <div style="
-      background: var(--bg-card); 
-      padding: 25px; 
-      border-radius: 20px; 
-      max-width: 800px; 
-      width: 90%; 
-      max-height: 80vh; 
-      display: flex; 
-      flex-direction: column; 
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-      border: 1px solid var(--border);
-      color: var(--text);
-    ">
-      <h3 style="margin: 0 0 20px 0; font-size: 20px; text-align: center;">Содержимое кейса</h3>
-      
-      <!-- Сетка с предметами -->
-      <div style="
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-        gap: 15px; 
-        overflow-y: auto; 
-        padding-right: 10px;
-        margin-bottom: 20px;
-        scrollbar-width: thin;
-      " class="custom-scroll">
-  `;
-
+  let html = `<div style="background:var(--bg-card);padding:25px;border-radius:20px;max-width:800px;width:90%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--text);"><h3 style="margin:0 0 20px 0;font-size:20px;text-align:center;">Содержимое кейса</h3><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:15px;overflow-y:auto;padding-right:10px;margin-bottom:20px;scrollbar-width:thin;" class="custom-scroll">`;
   items.forEach(i => {
     const percent = ((i.chance || 0) / total * 100).toFixed(1);
-    html += `
-      <div style="
-        background: var(--bg); 
-        padding: 12px; 
-        border-radius: 12px; 
-        text-align: center; 
-        border: 1px solid var(--border);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-      ">
-        <img src="${i.image_url}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
-        <div style="font-size: 13px; font-weight: 600; line-height: 1.2;">${i.name}</div>
-        <div style="font-size: 11px; color: var(--accent); font-weight: bold;">${percent}%</div>
-      </div>`;
+    html += `<div style="background:var(--bg);padding:12px;border-radius:12px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;"><img src="${i.image_url}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;"><div style="font-size:13px;font-weight:600;line-height:1.2;">${i.name}</div><div style="font-size:11px;color:var(--accent);font-weight:bold;">${percent}%</div></div>`;
   });
-
-  html += `
-      </div>
-      <button class="item-btn" style="
-        width: 100%; 
-        padding: 12px; 
-        background: var(--accent); 
-        color: white; 
-        border: none; 
-        border-radius: 10px; 
-        cursor: pointer; 
-        font-weight: bold;
-      " onclick="closeModal()">Понятно</button>
-    </div>
-  `;
-  
+  html += `</div><button class="item-btn" style="width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;" onclick="closeModal()">Понятно</button></div>`;
   showModal(html);
 }
 
@@ -384,136 +338,70 @@ function startRouletteAnimation(items, winItem) {
   const modal = document.createElement('div');
   modal.id = 'modal';
   modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;";
-  
-  modal.innerHTML = `
-    <div style="position:relative;width:600px;height:140px;overflow:hidden;border:3px solid #3b82f6;border-radius:12px;background:#0f172a;box-shadow: 0 0 30px rgba(59,130,246,0.3)">
-      <div id="roulette-track" style="display:flex;will-change:transform;align-items:center;"></div>
-      <div style="position:absolute;left:50%;top:0;bottom:0;width:4px;background:#ef4444;z-index:10;transform:translateX(-50%);box-shadow: 0 0 10px red;"></div>
-    </div>
-    <p style="margin-top:20px;color:#3b82f6;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">Удача улыбается тебе...</p>`;
-  
+  modal.innerHTML = `<div style="position:relative;width:600px;height:140px;overflow:hidden;border:3px solid #3b82f6;border-radius:12px;background:#0f172a;box-shadow:0 0 30px rgba(59,130,246,0.3)"><div id="roulette-track" style="display:flex;will-change:transform;align-items:center;"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:4px;background:#ef4444;z-index:10;transform:translateX(-50%);box-shadow:0 0 10px red;"></div></div><p style="margin-top:20px;color:#3b82f6;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">Удача улыбается тебе...</p>`;
   document.body.appendChild(modal);
   const track = document.getElementById('roulette-track');
-
-  const totalItemsCount = 600; 
-  const winIndex = 500; 
-  const elements = [];
-  for (let i = 0; i < totalItemsCount; i++) {
-    elements.push(items[Math.floor(Math.random() * items.length)]);
-  }
+  const totalItemsCount = 100; winIndex = 80; const elements = [];
+  for (let i = 0; i < totalItemsCount; i++) { elements.push(items[Math.floor(Math.random() * items.length)]); }
   elements[winIndex] = winItem;
-  
-  track.innerHTML = elements.map(i => `
-    <div style="min-width:130px;height:140px;display:flex;align-items:center;justify-content:center;border-right:1px solid #1e293b;">
-      <img src="${i.image_url}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;">
-    </div>`).join('');
-  
-  const rollSound = new Audio('sounds/caseroll.mp3');
-  const resultSound = new Audio('sounds/caseresult.mp3');
-  
-  const animationDuration = 7.3; 
-
-  rollSound.play().catch(e => console.log("Ошибка звука:", e));
-
+  track.innerHTML = elements.map(i => `<div style="min-width:130px;height:140px;display:flex;align-items:center;justify-content:center;border-right:1px solid #1e293b;"><img src="${i.image_url}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;"></div>`).join('');
+  const rollSound = new Audio('sounds/caseroll.mp3'); const resultSound = new Audio('sounds/caseresult.mp3');
+  const animationDuration = 7.3;
+  rollSound.play().catch(() => {});
   setTimeout(() => {
     track.style.transition = `transform ${animationDuration}s cubic-bezier(0.15, 0, 0.05, 1)`;
-    
-    const itemWidth = 130;
-    const centerOffset = 300 - (itemWidth / 2);
-    const randomInItem = Math.floor(Math.random() * 80) - 40; 
-    const finalShift = (winIndex * itemWidth) - centerOffset + randomInItem;
-    
+    const itemWidth = 130; const centerOffset = 300 - (itemWidth / 2);
+    const finalShift = (winIndex * itemWidth) - centerOffset + (Math.floor(Math.random() * 80) - 40);
     track.style.transform = `translateX(-${finalShift}px)`;
   }, 50);
-
   setTimeout(() => {
-
-    rollSound.pause();
-    rollSound.currentTime = 0;
-
-    resultSound.play().catch(e => console.log("Ошибка звука:", e));
-
-    modal.remove();
-    showWin(winItem);
-    loadOwned(); 
+    rollSound.pause(); rollSound.currentTime = 0;
+    resultSound.play().catch(() => {});
+    modal.remove(); showWin(winItem); loadOwned();
   }, (animationDuration * 1000));
 }
 
 function showWin(item) {
-  showModal(`
-    <div style="background:var(--bg-card);padding:30px;border-radius:16px;text-align:center;box-shadow:0 0 20px rgba(59,130,246,0.5)">
-      <h2 style="margin-top:0">Выпал предмет!</h2>
-      <img src="${item.image_url}" width="150" height="150" style="border-radius:8px;object-fit:cover;margin:10px 0">
-      <h3>${item.name}</h3>
-      <button class="item-btn buy" style="padding:10px 20px" onclick="closeModal()">Ура!</button>
-    </div>`)
+  showModal(`<div style="background:var(--bg-card);padding:30px;border-radius:16px;text-align:center;box-shadow:0 0 20px rgba(59,130,246,0.5)"><h2 style="margin-top:0">Выпал предмет!</h2><img src="${item.image_url}" width="150" height="150" style="border-radius:8px;object-fit:cover;margin:10px 0"><h3>${item.name}</h3><button class="item-btn buy" style="padding:10px 20px" onclick="closeModal()">Ура!</button></div>`)
 }
 
 async function equipItem(imageUrl, itemName, type) {
   const field = type === 'background' ? 'profile_bg' : 'profile_avatar'
-  const { error } = await client.from('profiles').update({ [field]: imageUrl }).eq('id', currentUser.id)
-  if (error) return
-
-  if (type === 'background') {
-    activeBg = imageUrl
-    updateProfileBgDisplay(imageUrl)
-  } else {
-    activeAvatar = imageUrl
-    document.getElementById('profile-avatar-img').src = imageUrl
-  }
-  showToast(`✨ Надето: ${itemName}`)
-  loadInventory()
+  await client.from('profiles').update({ [field]: imageUrl }).eq('id', currentUser.id)
+  if (type === 'background') { activeBg = imageUrl; updateProfileBgDisplay(imageUrl) }
+  else { activeAvatar = imageUrl; document.getElementById('profile-avatar-img').src = imageUrl }
+  showToast(`✨ Надето: ${itemName}`); loadInventory()
 }
 
 async function unequipItem(type) {
   const field = type === 'background' ? 'profile_bg' : 'profile_avatar'
   await client.from('profiles').update({ [field]: null }).eq('id', currentUser.id)
-  if (type === 'background') {
-    activeBg = null
-    updateProfileBgDisplay(null)
-  } else {
-    activeAvatar = null
-    document.getElementById('profile-avatar-img').src = 'icons/profile-default.png'
-  }
-  showToast('Снято')
-  loadInventory()
+  if (type === 'background') { activeBg = null; updateProfileBgDisplay(null) }
+  else { activeAvatar = null; document.getElementById('profile-avatar-img').src = 'icons/profile-default.png' }
+  showToast('Снято'); loadInventory()
 }
 
 function showModal(html) {
-  closeModal()
-  const modal = document.createElement('div')
-  modal.id = 'modal'
+  closeModal(); const modal = document.createElement('div'); modal.id = 'modal'
   modal.style = "position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;"
-  modal.innerHTML = html
-  document.body.appendChild(modal)
+  modal.innerHTML = html; document.body.appendChild(modal)
 }
 
-function closeModal() {
-  const m = document.getElementById('modal')
-  if (m) m.remove()
-}
+function closeModal() { const m = document.getElementById('modal'); if (m) m.remove() }
 
 function showToast(msg, type = 'success') {
-  const toast = document.getElementById('toast')
-  toast.textContent = msg
-  toast.className = `toast ${type} show`
-  setTimeout(() => toast.classList.remove('show'), 3000)
+  const toast = document.getElementById('toast'); toast.textContent = msg
+  toast.className = `toast ${type} show`; setTimeout(() => toast.classList.remove('show'), 3000)
 }
 
-function toggleDropdown(e) {
-  e.stopPropagation()
-  document.getElementById('profile-btn').classList.toggle('open')
-}
+function toggleDropdown(e) { e.stopPropagation(); document.getElementById('profile-btn').classList.toggle('open') }
 
 document.addEventListener('click', (e) => {
   const profile = document.getElementById('profile-btn')
   if (profile && !profile.contains(e.target)) profile.classList.remove('open')
 })
 
-async function logout() {
-  await client.auth.signOut()
-  window.location.href = 'index.html'
-}
+async function logout() { await client.auth.signOut(); window.location.href = 'index.html' }
 
 init()
   </script>
