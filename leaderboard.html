@@ -234,7 +234,17 @@ function render() {
             }
             if (cardAudio) {
                 currentAudio = cardAudio;
-                currentAudio.play().catch(() => { /* тут игнор автоплея */ });
+                currentAudio.play().catch(() => { /* бл*/ });
+            }
+        };
+
+        el.onmouseleave = () => {
+            if (cardAudio) {
+                cardAudio.pause();
+                cardAudio.currentTime = 0; // тут сброс звука
+            }
+            if (currentAudio === cardAudio) {
+                currentAudio = null;
             }
         };
 
