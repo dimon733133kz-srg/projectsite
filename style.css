@@ -2464,71 +2464,50 @@ body.dark .file-drop-zone {
   
 /* как же я ебал это всё с нуля переделывать но вот переделал лекции*/
 
-.lessons-bar {
-  display: flex;
-  gap: 12px;
-  background: var(--bg-card, #ffffff);
-  padding: 15px 30px;
-  border-bottom: 1px solid var(--border, #BBDEFB);
-  overflow-x: auto;
-  white-space: nowrap;
-  scroll-behavior: smooth;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+#lessons-bar.lessons-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 12px !important;
+  background: var(--bg-card, #ffffff) !important;
+  padding: 15px 30px !important;
+  border-bottom: 1px solid var(--border, #BBDEFB) !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  min-height: 60px !important;
+  align-items: center !important;
 }
 
-.lessons-bar::-webkit-scrollbar {
-  display: none;
+#lessons-bar .lesson-tab-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  outline: none !important;
+  border: 2px solid transparent !important;
+  
+  display: inline-block !important;
+  padding: 8px 22px !important;
+  margin: 0 !important;
+  
+  background: rgba(33, 150, 243, 0.1) !important;
+  color: var(--text-secondary, #546E7A) !important;
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 
-.lesson-tab-btn {
-  padding: 10px 24px;
-  border: 2px solid transparent;
-  background: rgba(33, 150, 243, 0.08); 
-  border-radius: 30px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text-secondary, #546E7A);
-  transition: all 0.25s ease;
-  outline: none;
+#lessons-bar .lesson-tab-btn:hover {
+  background: rgba(33, 150, 243, 0.2) !important;
+  transform: translateY(-1px) !important;
 }
 
-.lesson-tab-btn:hover {
-  background: rgba(33, 150, 243, 0.15);
-  color: var(--header-bg, #2196F3);
+#lessons-bar .lesson-tab-btn.active {
+  background: var(--header-bg, #2196F3) !important;
+  color: #ffffff !important;
+  border-color: var(--header-bg2, #1976D2) !important;
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3) !important;
 }
-
-.lesson-tab-btn.active {
-  background: var(--header-bg, #2196F3);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-  border-color: var(--header-bg2, #1976D2);
-}
-
-#modal-lesson-select {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid var(--border, #BBDEFB);
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 15px;
-  background-color: var(--bg-input, #ffffff);
-  color: var(--text, #1a2332);
-  outline: none;
-}
-
-#modal-lesson-select:focus {
-  border-color: var(--header-bg, #2196F3);
-}
-
-body.dark .lesson-tab-btn {
-  background: rgba(255, 255, 255, 0.05);
-  color: #b0bec5;
-}
-
-body.dark .lesson-tab-btn.active {
-  background: var(--header-bg, #2196F3);
-  color: #fff;
+  
+#lessons-bar::-webkit-scrollbar {
+  display: none !important;
 }
