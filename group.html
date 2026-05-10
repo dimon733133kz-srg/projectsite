@@ -6,6 +6,45 @@
   <title>Группа</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+  .lessons-bar {
+    display: flex !important;
+    gap: 12px !important;
+    padding: 15px 25px !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    align-items: center !important;
+  }
+  
+  .lesson-tab-btn {
+    all: unset !important;
+    cursor: pointer !important;
+    padding: 8px 18px !important;
+    background: #f8f9fa !important;
+    color: #495057 !important;
+    border-radius: 20px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border: 1px solid #dae0e5 !important;
+    transition: 0.2s !important;
+    display: inline-block !important;
+  }
+
+  .lesson-tab-btn:hover {
+    background: #e9ecef !important;
+  }
+
+  .lesson-tab-btn.active {
+    background: #2196F3 !important;
+    color: #fff !important;
+    border-color: #1976D2 !important;
+  }
+    
+  body.dark .lessons-bar { background: #1a1a1a !important; border-color: #333 !important; }
+  body.dark .lesson-tab-btn { background: #2d2d2d !important; color: #ccc !important; border-color: #444 !important; }
+</style>
 </head>
 <body>
 
@@ -41,7 +80,7 @@
       </div>
     </div>
   </header>
-
+<div class="lessons-bar" id="lessons-bar"></div>
   <main>
     <div class="group-layout">
 
@@ -102,10 +141,14 @@
     let currentUser = null
     let isTeacher = false
     let teacherPassword = null
-    let allSections = []
-    let allLectures = []
-    let allProfiles = []
-    let allResults = []
+    
+    let allLessons = []   
+    let allSections = []   
+    let allLectures = []   
+    let allProfiles = []  
+    let allResults = []    
+
+    let currentLessonId = null
     let currentSectionId = null
     let viewingGroup = null
 
@@ -127,23 +170,13 @@
       document.getElementById('profile-name').textContent = data.name
       document.getElementById('wins-count').textContent = data.wins ?? 0
       document.getElementById('streak-count').textContent = data.win_streak ?? 0
+      
       if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
       if (data.profile_bg) {
-  const btn = document.getElementById('profile-btn')
-  btn.style.backgroundImage = `url('${data.profile_bg}')`
-
-  const img = document.createElement('img')
-  img.src = data.profile_bg
-  img.style.position = 'absolute'
-  img.style.inset = '0'
-  img.style.width = '100%'
-  img.style.height = '100%'
-  img.style.objectFit = 'contain'
-  img.style.zIndex = '0'
-
-  btn.appendChild(img)
-  btn.classList.add('has-bg')
-}
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        btn.classList.add('has-bg')
+      }
 
       await loadTeacherPassword()
       await loadData()
@@ -154,9 +187,7 @@
         const { data, error } = await client.storage
           .from('config')
           .download('teacher_password.txt')
-
         if (error || !data) return
-
         teacherPassword = (await data.text()).trim()
       } catch (e) {
         teacherPassword = null
@@ -164,34 +195,65 @@
     }
 
     async function loadData() {
-      const [sectionsRes, lecturesRes, profilesRes, resultsRes] = await Promise.all([
-        client.from('sections').select('id, title, order').order('order'),
-        client.from('lectures').select('id, title, section_id, order').order('order'),
+      const [lessonsRes, sectionsRes, lecturesRes, profilesRes, resultsRes] = await Promise.all([
+        client.from('lessons').select('*').order('id'),
+        client.from('sections').select('*').order('order'),
+        client.from('lectures').select('*').order('order'),
         client.from('profiles').select('id, name, group, profile_avatar'),
-        client.from('quiz_results').select('user_id, lecture_id, percent')
+        client.from('quiz_results').select('*')
       ])
 
+      allLessons = lessonsRes.data || []
       allSections = sectionsRes.data || []
       allLectures = lecturesRes.data || []
       allProfiles = profilesRes.data || []
       allResults = resultsRes.data || []
 
+      renderLessonsBar()
+    }
+
+    function renderLessonsBar() {
+      const bar = document.getElementById('lessons-bar')
+      if (!bar) return
+
+      bar.innerHTML = allLessons.map(lesson => `
+        <button class="lesson-tab-btn ${currentLessonId === lesson.id ? 'active' : ''}" 
+                onclick="selectLesson('${lesson.id}')">
+          📚 ${lesson.name}
+        </button>`).join('')
+
+      if (!currentLessonId && allLessons.length > 0) {
+        selectLesson(allLessons[0].id)
+      }
+    }
+
+    function selectLesson(lessonId) {
+      currentLessonId = lessonId
+      currentSectionId = null
+      renderLessonsBar()
       renderSidebar()
+      
+      document.getElementById('group-content').innerHTML = `
+        <div class="group-empty">
+          <div class="group-empty-icon">📂</div>
+          <div class="group-empty-text">Выбери раздел предмета слева</div>
+        </div>`
     }
 
     function renderSidebar() {
       const sidebar = document.getElementById('sections-sidebar')
+      
+      const filteredSections = allSections.filter(s => String(s.lesson_id) === String(currentLessonId))
 
-      if (allSections.length === 0) {
+      if (filteredSections.length === 0) {
         sidebar.innerHTML = '<div style="padding:12px 16px; font-size:13px; color:rgba(255,255,255,0.4);">Разделов нет</div>'
-        return
+      } else {
+        sidebar.innerHTML = filteredSections.map(s => `
+          <button class="group-section-btn ${currentSectionId === s.id ? 'active' : ''}"
+            onclick="selectSection('${s.id}')">
+            📁 ${s.title}
+          </button>`).join('')
       }
-
-      sidebar.innerHTML = allSections.map(s => `
-        <button class="group-section-btn ${currentSectionId === s.id ? 'active' : ''}"
-          onclick="selectSection('${s.id}')">
-          📁 ${s.title}
-        </button>`).join('')
 
       if (isTeacher) {
         const groups = [...new Set(allProfiles.map(p => p.group).filter(Boolean))]
@@ -228,34 +290,12 @@
       const content = document.getElementById('group-content')
 
       if (students.length === 0) {
-        content.innerHTML = `
-          <div class="group-header">
-            <div class="group-title">${section?.title || ''}</div>
-            <div class="group-badge">${viewingGroup}</div>
-          </div>
-          <div class="group-empty">
-            <div class="group-empty-icon">👤</div>
-            <div class="group-empty-text">В этой группе нет студентов</div>
-          </div>`
-        return
-      }
-
-      if (sectionLectures.length === 0) {
-        content.innerHTML = `
-          <div class="group-header">
-            <div class="group-title">${section?.title || ''}</div>
-            <div class="group-badge">${viewingGroup}</div>
-          </div>
-          <div class="group-empty">
-            <div class="group-empty-icon">📭</div>
-            <div class="group-empty-text">В этом разделе нет лекций</div>
-          </div>`
+        content.innerHTML = `<div class="group-empty"><div class="group-empty-text">В группе ${viewingGroup} нет студентов</div></div>`
         return
       }
 
       const rows = students.map(student => {
         let totalPercent = 0
-
         const cells = sectionLectures.map(lecture => {
           const result = allResults.find(r => r.user_id === student.id && r.lecture_id === lecture.id)
           if (result) {
@@ -265,10 +305,7 @@
           return `<td class="grade-cell no-grade">—</td>`
         })
 
-        const finalScore = totalLectures > 0
-          ? Math.round((totalPercent / totalLectures) * 10) / 10
-          : 0
-
+        const finalScore = totalLectures > 0 ? Math.round((totalPercent / totalLectures) * 10) / 10 : 0
         const totalClass = finalScore >= 70 ? 'high' : finalScore >= 40 ? 'mid' : 'low'
         const isMe = student.id === currentUser.id
 
@@ -276,11 +313,8 @@
           <tr>
             <td>
               <div class="student-name-cell">
-                <img class="student-avatar"
-                  src="${student.profile_avatar || 'icons/profile-default.png'}"
-                  alt="${student.name}">
-                ${student.name}
-                ${isMe ? '<span class="me-badge">Я</span>' : ''}
+                <img class="student-avatar" src="${student.profile_avatar || 'icons/profile-default.png'}">
+                ${student.name} ${isMe ? '<span class="me-badge">Я</span>' : ''}
               </div>
             </td>
             ${cells.join('')}
@@ -304,9 +338,6 @@
             </thead>
             <tbody>${rows.join('')}</tbody>
           </table>
-        </div>
-        <div style="font-size:12px; color:#94a3b8;">
-          * Итог = сумма процентов ÷ ${totalLectures} (всего лекций)
         </div>`
     }
 
@@ -318,17 +349,10 @@
         document.getElementById('teacher-btn').classList.remove('active')
         document.getElementById('teacher-btn').textContent = '🔑 Преподаватель'
         renderSidebar()
-        document.getElementById('group-content').innerHTML = `
-          <div class="group-empty">
-            <div class="group-empty-icon">👥</div>
-            <div class="group-empty-text">Выбери раздел слева</div>
-          </div>`
         return
       }
       document.getElementById('teacher-modal').classList.add('active')
       document.getElementById('teacher-password-input').value = ''
-      document.getElementById('teacher-modal-err').textContent = ''
-      setTimeout(() => document.getElementById('teacher-password-input').focus(), 100)
     }
 
     function closeTeacherModal() {
@@ -339,11 +363,6 @@
       const input = document.getElementById('teacher-password-input').value
       const err = document.getElementById('teacher-modal-err')
 
-      if (!teacherPassword) {
-        err.textContent = 'Пароль не загружен. Проверь bucket "config".'
-        return
-      }
-
       if (input === teacherPassword) {
         isTeacher = true
         closeTeacherModal()
@@ -352,22 +371,19 @@
         renderSidebar()
       } else {
         err.textContent = 'Неверный пароль'
-        document.getElementById('teacher-password-input').value = ''
-        document.getElementById('teacher-password-input').focus()
       }
     }
-
+    
     function toggleDropdown(e) {
       e.stopPropagation()
       document.getElementById('profile-btn').classList.toggle('open')
     }
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', (e) => {
       const profile = document.getElementById('profile-btn')
       if (profile && !profile.contains(e.target)) profile.classList.remove('open')
-
       const modal = document.getElementById('teacher-modal')
-      if (modal.classList.contains('active') && e.target === modal) closeTeacherModal()
+      if (e.target === modal) closeTeacherModal()
     })
 
     async function logout() {
@@ -376,7 +392,7 @@
     }
 
     init()
-  </script>
+</script>
 
 </body>
 </html>
