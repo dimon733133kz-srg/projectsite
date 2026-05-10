@@ -2466,33 +2466,69 @@ body.dark .file-drop-zone {
 
 .lessons-bar {
   display: flex;
-  gap: 10px;
-  background: var(--bg-card);
-  padding: 10px 30px;
-  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  background: var(--bg-card, #ffffff);
+  padding: 15px 30px;
+  border-bottom: 1px solid var(--border, #BBDEFB);
   overflow-x: auto;
   white-space: nowrap;
+  scroll-behavior: smooth;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.lessons-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .lesson-tab-btn {
-  padding: 8px 20px;
-  border: none;
-  background: rgba(0,0,0,0.05);
-  border-radius: 20px;
+  padding: 10px 24px;
+  border: 2px solid transparent;
+  background: rgba(33, 150, 243, 0.08); 
+  border-radius: 30px;
   cursor: pointer;
   font-weight: 600;
-  color: var(--text-secondary);
-  transition: all 0.2s;
+  font-size: 14px;
+  color: var(--text-secondary, #546E7A);
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.lesson-tab-btn:hover {
+  background: rgba(33, 150, 243, 0.15);
+  color: var(--header-bg, #2196F3);
 }
 
 .lesson-tab-btn.active {
-  background: var(--header-bg);
-  color: white;
-  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
+  background: var(--header-bg, #2196F3);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  border-color: var(--header-bg2, #1976D2);
 }
 
-.lesson-tab-btn:hover:not(.active) {
-  background: rgba(0,0,0,0.1);
+#modal-lesson-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border, #BBDEFB);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 15px;
+  background-color: var(--bg-input, #ffffff);
+  color: var(--text, #1a2332);
+  outline: none;
 }
 
-.lessons-bar::-webkit-scrollbar { display: none; }
+#modal-lesson-select:focus {
+  border-color: var(--header-bg, #2196F3);
+}
+
+body.dark .lesson-tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #b0bec5;
+}
+
+body.dark .lesson-tab-btn.active {
+  background: var(--header-bg, #2196F3);
+  color: #fff;
+}
