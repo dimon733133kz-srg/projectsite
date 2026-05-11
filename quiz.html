@@ -18,13 +18,13 @@
 
     <div class="header-right">
       <div class="stat-badge wins" onclick="this.classList.toggle('show-count')">
-  <img src="icons/wins.png" alt="Победы">
-  <span id="wins-count">0</span>
-</div>
-<div class="stat-badge streak" onclick="this.classList.toggle('show-count')">
-  <img src="icons/streak.png" alt="Стрик">
-  <span id="streak-count">0</span>
-</div>
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
+      </div>
+      <div class="stat-badge streak" onclick="this.classList.toggle('show-count')">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
 
       <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
         <div class="profile-icon">
@@ -55,363 +55,381 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
+  <style>
+    .quiz-setup-box { 
+      background: var(--bg-card, #fff); 
+      border-radius: 20px; 
+      padding: 35px; 
+      max-width: 550px; 
+      margin: 40px auto; 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .quiz-setup-title { 
+      font-size: 28px; 
+      font-weight: 800; 
+      text-align: center; 
+      margin-bottom: 30px; 
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .quiz-setup-section { margin-bottom: 25px; }
+    
+    .quiz-setup-label { 
+      font-size: 13px; 
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+      font-weight: 700; 
+      margin-bottom: 12px; 
+      color: #94a3b8; 
+    }
+
+    .quiz-lesson-select { 
+      width: 100%; 
+      padding: 14px; 
+      border-radius: 12px; 
+      border: 2px solid #e2e8f0; 
+      background: var(--bg-card); 
+      color: var(--text-main); 
+      font-size: 16px; 
+      font-weight: 600; 
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .quiz-lesson-select:focus { border-color: #3b82f6; }
+
+    .quiz-setup-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+    
+    .quiz-setup-opt { 
+      padding: 12px 10px; 
+      border: 2px solid #e2e8f0; 
+      background: var(--bg-card); 
+      color: var(--text-main);
+      border-radius: 12px; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+      font-weight: 700; 
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .quiz-setup-opt:hover:not(:disabled) { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+    .quiz-setup-opt.selected { background: #3b82f6; border-color: #3b82f6; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+    
+    .quiz-setup-opt:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+    .difficulty-multiplier { font-size: 11px; font-weight: 500; opacity: 0.8; }
+
+    .quiz-start-btn { 
+      width: 100%; 
+      padding: 18px; 
+      border-radius: 15px; 
+      border: none; 
+      background: linear-gradient(135deg, #3b82f6, #2563eb); 
+      color: #fff; 
+      font-size: 18px; 
+      font-weight: 800; 
+      cursor: pointer; 
+      margin-top: 10px; 
+      transition: 0.3s;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+    }
+
+    .quiz-start-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(37, 99, 235, 0.3); }
+    .quiz-start-btn:active { transform: translateY(0); }
+    .quiz-start-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+    body.dark .quiz-setup-box { border-color: #334155; }
+    body.dark .quiz-lesson-select { border-color: #334155; }
+    body.dark .quiz-setup-opt { border-color: #334155; }
+  </style>
+
   <script>
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
-
-    const QUESTIONS_URL = 'https://rnijptnxsheusvxepiht.supabase.co/storage/v1/object/public/lectures/quiz.json'
+    const STORAGE_BASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co/storage/v1/object/public/lectures/'
 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }  
+    let currentUserId = null, currentMoney = 0, currentWins = 0, currentStreak = 0
+    let allLessons = [], completedLectures = []
+    let selectedLessonId = null, selectedDifficulty = 'easy', selectedCount = 10, selectedTime = 20
+    let quizQuestions = [], quizIndex = 0, quizCorrect = 0, quizWrong = 0, quizLives = 3, quizTimer = null
 
-    let currentUserId = null
-    let currentMoney = 0
-    let currentWins = 0
-    let currentStreak = 0
-
-    let allQuestions = []
-    let selectedCount = 10
-    let selectedTime = 20
-
-    let quizQuestions = []
-    let quizIndex = 0
-    let quizCorrect = 0
-    let quizWrong = 0
-    let quizLives = 3
-    let quizTimer = null
-    let timeLeft = 0
-
-      async function init() {
+    async function init() {
+      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
+      
       const { data: { session } } = await client.auth.getSession()
       if (!session) { window.location.href = 'index.html'; return }
-
       currentUserId = session.user.id
 
-      const { data, error } = await client
-        .from('profiles')
-        .select('name, profile_bg, profile_avatar, wins, win_streak, money')
-        .eq('id', session.user.id)
-        .single()
+      const [profRes, lessonsRes, progRes] = await Promise.all([
+        client.from('profiles').select('*').eq('id', currentUserId).single(),
+        client.from('lessons').select('*').order('id'),
+        client.from('quiz_results').select('lecture_id').eq('user_id', currentUserId)
+      ])
 
-      if (error || !data) { window.location.href = 'index.html'; return }
-
-      currentMoney = data.money ?? 0
-      currentWins = data.wins ?? 0
-      currentStreak = data.win_streak ?? 0
-
-      document.getElementById('profile-name').textContent = data.name
-      document.getElementById('wins-count').textContent = currentWins
-      document.getElementById('streak-count').textContent = currentStreak
-
-      if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
-
-      if (data.profile_bg) {
-  const btn = document.getElementById('profile-btn')
-  btn.style.backgroundImage = `url('${data.profile_bg}')`
-
-  const img = document.createElement('img')
-  img.src = data.profile_bg
-  img.style.position = 'absolute'
-  img.style.inset = '0'
-  img.style.width = '100%'
-  img.style.height = '100%'
-  img.style.objectFit = 'contain'
-  img.style.zIndex = '0'
-
-  btn.appendChild(img)
-  btn.classList.add('has-bg')
-}
-
-      try {
-        const res = await fetch(QUESTIONS_URL)
-        const json = await res.json()
-        allQuestions = json.questions || []
-      } catch (e) {
-        allQuestions = []
+      if (profRes.data) {
+        const d = profRes.data
+        currentMoney = d.money ?? 0
+        currentWins = d.wins ?? 0
+        currentStreak = d.win_streak ?? 0
+        document.getElementById('profile-name').textContent = d.name
+        document.getElementById('wins-count').textContent = currentWins
+        document.getElementById('streak-count').textContent = currentStreak
+        if (d.profile_avatar) document.getElementById('profile-avatar-img').src = d.profile_avatar
       }
 
+      allLessons = lessonsRes.data || []
+      completedLectures = progRes.data?.map(r => r.lecture_id) || []
+      
+      if (allLessons.length > 0) selectedLessonId = allLessons[0].id
+      
       showSetup()
     }
 
-    function showSetup() {
+    async function showSetup() {
       const layout = document.getElementById('quiz-page-layout')
+      
+      let access = { easy: true, medium: false, hard: false }
+      if (selectedLessonId) {
+        const sections = await client.from('sections').select('id').eq('lesson_id', selectedLessonId).order('order', { ascending: true })
+        if (sections.data && sections.data.length > 0) {
+          const s1 = sections.data[0].id
+          const { data: l1 } = await client.from('lectures').select('id').eq('section_id', s1)
+          if (l1 && l1.length > 0 && l1.every(lec => completedLectures.includes(lec.id))) access.medium = true
+          
+          if (sections.data.length > 1) {
+            const s2 = sections.data[1].id
+            const { data: l2 } = await client.from('lectures').select('id').eq('section_id', s2)
+            if (l2 && l2.length > 0 && l2.every(lec => completedLectures.includes(lec.id))) access.hard = true
+          }
+        }
+      }
+
+      if (selectedDifficulty === 'medium' && !access.medium) selectedDifficulty = 'easy'
+      if (selectedDifficulty === 'hard' && !access.hard) selectedDifficulty = 'easy'
+
       layout.innerHTML = `
         <div class="quiz-setup-box">
-          <div class="quiz-setup-title">⚡ Викторина</div>
+          <div class="quiz-setup-title">Настройка викторины</div>
 
           <div class="quiz-setup-section">
-            <div class="quiz-setup-label">Количество вопросов</div>
-            <div class="quiz-setup-options" id="count-opts">
-              <button class="quiz-setup-opt selected" data-val="10" onclick="selectOpt(this, 'count')">10</button>
-              <button class="quiz-setup-opt" data-val="20" onclick="selectOpt(this, 'count')">20</button>
-              <button class="quiz-setup-opt" data-val="30" onclick="selectOpt(this, 'count')">30</button>
+            <div class="quiz-setup-label">1. Выберите дисциплину</div>
+            <select class="quiz-lesson-select" onchange="changeLesson(this.value)">
+              ${allLessons.map(l => `<option value="${l.id}" ${selectedLessonId == l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="quiz-setup-section">
+            <div class="quiz-setup-label">2. Сложность</div>
+            <div class="quiz-setup-options">
+              <button class="quiz-setup-opt ${selectedDifficulty === 'easy' ? 'selected' : ''}" onclick="updateDifficulty('easy')">
+                <span>Легко</span>
+                <span class="difficulty-multiplier">x0.5</span>
+              </button>
+              <button class="quiz-setup-opt ${selectedDifficulty === 'medium' ? 'selected' : ''}" ${!access.medium ? 'disabled' : ''} onclick="updateDifficulty('medium')">
+                <span>Средне</span>
+                <span class="difficulty-multiplier">x1.0</span>
+              </button>
+              <button class="quiz-setup-opt ${selectedDifficulty === 'hard' ? 'selected' : ''}" ${!access.hard ? 'disabled' : ''} onclick="updateDifficulty('hard')">
+                <span>Сложно</span>
+                <span class="difficulty-multiplier">x2.0</span>
+              </button>
             </div>
           </div>
 
           <div class="quiz-setup-section">
-            <div class="quiz-setup-label">Время на ответ</div>
-            <div class="quiz-setup-options" id="time-opts">
-              <button class="quiz-setup-opt" data-val="10" onclick="selectOpt(this, 'time')">10 сек</button>
-              <button class="quiz-setup-opt" data-val="15" onclick="selectOpt(this, 'time')">15 сек</button>
-              <button class="quiz-setup-opt selected" data-val="20" onclick="selectOpt(this, 'time')">20 сек</button>
-              <button class="quiz-setup-opt" data-val="30" onclick="selectOpt(this, 'time')">30 сек</button>
+            <div class="quiz-setup-label">3. Количество вопросов</div>
+            <div class="quiz-setup-options">
+              <button class="quiz-setup-opt ${selectedCount === 10 ? 'selected' : ''}" onclick="updateCount(10)">10</button>
+              <button class="quiz-setup-opt ${selectedCount === 20 ? 'selected' : ''}" onclick="updateCount(20)">20</button>
+              <button class="quiz-setup-opt ${selectedCount === 30 ? 'selected' : ''}" onclick="updateCount(30)">30</button>
             </div>
           </div>
 
-          <div style="font-size:13px; color:#94a3b8; text-align:center;">
-            Доступно вопросов: ${allQuestions.length} | Жизни: ❤️❤️❤️
+          <div class="quiz-setup-section">
+            <div class="quiz-setup-label">4. Время на раздумья</div>
+            <div class="quiz-setup-options">
+              <button class="quiz-setup-opt ${selectedTime === 15 ? 'selected' : ''}" onclick="updateTime(15)">15 сек</button>
+              <button class="quiz-setup-opt ${selectedTime === 20 ? 'selected' : ''}" onclick="updateTime(20)">20 сек</button>
+              <button class="quiz-setup-opt ${selectedTime === 30 ? 'selected' : ''}" onclick="updateTime(30)">30 сек</button>
+            </div>
           </div>
 
-          <button class="quiz-start-btn" onclick="startQuiz()" ${allQuestions.length === 0 ? 'disabled' : ''}>
-            ${allQuestions.length === 0 ? 'Вопросы не загружены' : 'Начать викторину'}
-          </button>
+          <button class="quiz-start-btn" id="start-btn" onclick="prepareQuiz()">Запустить викторину</button>
+          <div id="setup-err" style="color:#ef4444; font-size:13px; text-align:center; margin-top:15px; font-weight:600;"></div>
         </div>`
     }
 
-    function selectOpt(btn, type) {
-      const group = btn.parentElement.querySelectorAll('.quiz-setup-opt')
-      group.forEach(b => b.classList.remove('selected'))
-      btn.classList.add('selected')
-      if (type === 'count') selectedCount = parseInt(btn.dataset.val)
-      else selectedTime = parseInt(btn.dataset.val)
+    function changeLesson(val) { selectedLessonId = val; showSetup(); }
+    function updateDifficulty(val) { selectedDifficulty = val; showSetup(); }
+    function updateCount(val) { selectedCount = val; showSetup(); }
+    function updateTime(val) { selectedTime = val; showSetup(); }
+
+    async function prepareQuiz() {
+      const btn = document.getElementById('start-btn');
+      const err = document.getElementById('setup-err');
+      btn.disabled = true;
+      err.textContent = "";
+
+      const lesson = allLessons.find(l => l.id == selectedLessonId);
+      const fileName = `${lesson.quiz}_${selectedDifficulty}_quiz.json`;
+      
+      try {
+        const res = await fetch(STORAGE_BASE_URL + fileName);
+        if (!res.ok) throw new Error();
+        const json = await res.json();
+        const questions = json.questions || [];
+        if (questions.length === 0) throw new Error();
+        
+        quizQuestions = shuffle(questions).slice(0, Math.min(selectedCount, questions.length));
+        startQuizLoop();
+      } catch (e) {
+        err.textContent = `⚠️ Для предмета "${lesson.name}" вопросы уровня "${selectedDifficulty}" еще не добавлены.`;
+        btn.disabled = false;
+      }
     }
 
     function shuffle(arr) {
-      const a = [...arr]
+      const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]]
+        [a[i], a[j]] = [a[j], a[i]];
       }
-      return a
+      return a;
     }
 
-    function startQuiz() {
-      const count = Math.min(selectedCount, allQuestions.length)
-      quizQuestions = shuffle(allQuestions).slice(0, count)
-      quizIndex = 0
-      quizCorrect = 0
-      quizWrong = 0
-      quizLives = 3
-      showQuestion()
+    function startQuizLoop() {
+      quizIndex = 0; quizCorrect = 0; quizWrong = 0; quizLives = 3;
+      showQuestion();
     }
 
     function showQuestion() {
-      clearInterval(quizTimer)
+      clearInterval(quizTimer);
+      if (quizIndex >= quizQuestions.length) { showResults(true); return; }
 
-      if (quizIndex >= quizQuestions.length) {
-        showResults(true)
-        return
-      }
+      const q = quizQuestions[quizIndex];
+      let timeLeft = selectedTime;
+      let answered = false;
+      const opts = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })));
 
-      const q = quizQuestions[quizIndex]
-      const total = quizQuestions.length
-      timeLeft = selectedTime
-      let answered = false
-
-      const opts = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
-
-      const layout = document.getElementById('quiz-page-layout')
+      const layout = document.getElementById('quiz-page-layout');
       layout.innerHTML = `
         <div class="quiz-game-box">
           <div class="quiz-game-top">
-            <div class="quiz-lives" id="lives-row">
-              ${renderHearts()}
-            </div>
-            <div class="quiz-game-counter">${quizIndex + 1} / ${total}</div>
+            <div class="quiz-lives" id="lives-row">${renderHearts()}</div>
+            <div class="quiz-game-counter">${quizIndex + 1} / ${quizQuestions.length}</div>
             <div class="quiz-game-timer" id="qtimer">${timeLeft}</div>
           </div>
-
           <div class="quiz-timer-bar-wrap">
             <div class="quiz-timer-bar" id="timer-bar" style="width:100%"></div>
           </div>
-
           <div class="quiz-game-question">${q.question}</div>
-
           <div class="quiz-game-options">
-            ${opts.map(opt => `
-              <button class="quiz-game-option" data-id="${opt.idx}">
-                ${opt.text}
-              </button>`).join('')}
+            ${opts.map(opt => `<button class="quiz-game-option" data-id="${opt.idx}">${opt.text}</button>`).join('')}
           </div>
-        </div>`
+        </div>`;
 
       document.querySelectorAll('.quiz-game-option').forEach(btn => {
         btn.onclick = () => {
-          if (answered) return
-          answered = true
-          clearInterval(quizTimer)
-          handleAnswer(parseInt(btn.dataset.id), q.answer)
-        }
-      })
-
-      quizTimer = setInterval(() => {
-        timeLeft--
-        const timerEl = document.getElementById('qtimer')
-        const barEl = document.getElementById('timer-bar')
-        if (!timerEl) { clearInterval(quizTimer); return }
-
-        timerEl.textContent = timeLeft
-        if (barEl) {
-          barEl.style.width = `${(timeLeft / selectedTime) * 100}%`
-          if (timeLeft <= selectedTime * 0.3) {
-            timerEl.classList.add('urgent')
-            barEl.classList.add('urgent')
+          if (answered) return;
+          answered = true;
+          clearInterval(quizTimer);
+          const sel = parseInt(btn.dataset.id);
+          if (sel === q.answer) {
+            btn.classList.add('correct');
+            quizCorrect++;
+            setTimeout(() => { quizIndex++; showQuestion(); }, 600);
+          } else {
+            btn.classList.add('wrong');
+            quizWrong++;
+            loseLife(false);
           }
         }
+      });
 
-        if (timeLeft <= 0) {
-          if (answered) return
-          answered = true
-          clearInterval(quizTimer)
-          loseLife(true)
-        }
-      }, 1000)
+      quizTimer = setInterval(() => {
+        timeLeft--;
+        const tEl = document.getElementById('qtimer');
+        const bEl = document.getElementById('timer-bar');
+        if (!tEl) return clearInterval(quizTimer);
+        tEl.textContent = timeLeft;
+        if (bEl) bEl.style.width = `${(timeLeft / selectedTime) * 100}%`;
+        if (timeLeft <= 0 && !answered) { answered = true; clearInterval(quizTimer); loseLife(true); }
+      }, 1000);
     }
 
     function renderHearts() {
-      let html = ''
-      for (let i = 0; i < 3; i++) {
-        const lost = i >= quizLives
-        html += `<img class="quiz-heart ${lost ? 'lost' : ''}" src="icons/heart.png" alt="❤️">`
-      }
-      return html
-    }
-
-    function handleAnswer(selected, correct) {
-      if (selected === correct) {
-        quizCorrect++
-        quizIndex++
-        showQuestion()
-      } else {
-        quizWrong++
-        loseLife(false)
-      }
+      let h = '';
+      for (let i = 0; i < 3; i++) h += `<img class="quiz-heart ${i >= quizLives ? 'lost' : ''}" src="icons/heart.png" alt="❤️">`;
+      return h;
     }
 
     function loseLife(isTimeout) {
-      quizLives--
-      if (!isTimeout) quizIndex++
-
-      if (quizLives <= 0) {
-        showResults(false)
-      } else {
-        showQuestion()
-      }
+      quizLives--;
+      if (quizLives <= 0) setTimeout(() => showResults(false), 600);
+      else setTimeout(() => { if(!isTimeout) quizIndex++; showQuestion(); }, 600);
     }
 
-    // Показ результат
     async function showResults(won) {
-      clearInterval(quizTimer)
+      clearInterval(quizTimer);
+      const total = quizQuestions.length;
+      const percent = total > 0 ? Math.round((quizCorrect / total) * 100) : 0;
+      
+      let base = quizCorrect * 5 + 30 * quizLives;
+      if (quizLives === 3) base += 100;
 
-      const total = quizQuestions.length
-      const percent = total > 0 ? Math.round((quizCorrect / total) * 1000) / 10 : 0
-      const allLivesLeft = quizLives === 3
+      const diffMult = selectedDifficulty === 'easy' ? 0.5 : selectedDifficulty === 'medium' ? 1 : 2;
+      const streakMult = 1 + (currentStreak * 0.1);
+      const timeMult = selectedTime === 15 ? 1.5 : selectedTime === 20 ? 1.25 : 1;
 
-      // Формула денег
-      let base = quizCorrect * 5 + 30 * quizLives
-      if (allLivesLeft) base += 100
+      let reward = Math.round(base * streakMult * timeMult * diffMult);
+      if (quizLives === 3) reward = Math.round(reward * 1.5);
 
-      const streakMultiplier = 1 + currentStreak * 0.1
-      const timeMultiplier = selectedTime === 10 ? 2 : selectedTime === 15 ? 1.5 : selectedTime === 20 ? 1.25 : 1
+      let newStreak = won ? currentStreak + 1 : 0;
+      let newWins = won ? currentWins + 1 : currentWins;
+      let newMoney = currentMoney + reward;
 
-      let reward = Math.round(base * streakMultiplier * timeMultiplier)
-      if (allLivesLeft) reward = Math.round(reward * 1.5)
+      await client.from('profiles').update({ money: newMoney, wins: newWins, win_streak: newStreak }).eq('id', currentUserId);
 
-      // Стрики и победы обновление хачу
-      let newStreak = currentStreak
-      let newWins = currentWins
+      currentMoney = newMoney; currentWins = newWins; currentStreak = newStreak;
+      document.getElementById('wins-count').textContent = newWins;
+      document.getElementById('streak-count').textContent = newStreak;
 
-      if (won) {
-        newStreak = currentStreak + 1
-        newWins = currentWins + 1
-      } else {
-        newStreak = 0
-      }
-
-      const newMoney = currentMoney + reward
-
-      await client.from('profiles').update({
-        money: newMoney,
-        wins: newWins,
-        win_streak: newStreak
-      }).eq('id', currentUserId)
-
-      currentMoney = newMoney
-      currentWins = newWins
-      currentStreak = newStreak
-
-      document.getElementById('wins-count').textContent = newWins
-      document.getElementById('streak-count').textContent = newStreak
-
-      const layout = document.getElementById('quiz-page-layout')
+      const layout = document.getElementById('quiz-page-layout');
       layout.innerHTML = `
         <div class="quiz-result-box">
-          <div class="quiz-result-title">${won ? '🏆 Победа!' : quizLives <= 0 ? '💔 Жизни кончились' : '⏱ Время вышло'}</div>
-          <div class="quiz-result-subtitle">${won ? 'Ты ответил на все вопросы!' : 'Лучше в следующий раз!'}</div>
-
+          <div class="quiz-result-title">${won ? '🏆 Победа!' : '💔 Конец игры'}</div>
           <div class="quiz-result-score">${percent}%</div>
-
           <div class="quiz-result-grid">
-            <div class="quiz-result-card correct">
-              <div class="quiz-result-card-label">Правильно</div>
-              <div class="quiz-result-card-value">${quizCorrect}</div>
-            </div>
-            <div class="quiz-result-card wrong">
-              <div class="quiz-result-card-label">Неправильно</div>
-              <div class="quiz-result-card-value">${quizWrong}</div>
-            </div>
-            <div class="quiz-result-card streak">
-              <div class="quiz-result-card-label">${won ? 'Новый стрик' : 'Стрик сброшен'}</div>
-              <div class="quiz-result-card-value">${won ? newStreak : '0'}</div>
-            </div>
-            <div class="quiz-result-card info">
-              <div class="quiz-result-card-label">Всего побед</div>
-              <div class="quiz-result-card-value">${newWins}</div>
-            </div>
+            <div class="quiz-result-card correct"><div>Правильно</div><div>${quizCorrect}</div></div>
+            <div class="quiz-result-card wrong"><div>Неправильно</div><div>${quizWrong}</div></div>
+            <div class="quiz-result-card streak"><div>Стрик</div><div>${newStreak}</div></div>
+            <div class="quiz-result-card info"><div>Сложность</div><div>${selectedDifficulty}</div></div>
           </div>
-
-          <div class="quiz-result-reward">
-            💰 Награда
-            <div class="quiz-result-reward-amount">+${reward} 🪙</div>
+          <div class="quiz-result-reward">💰 Награда<div>+${reward} 🪙</div></div>
+          <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="quiz-result-btn" style="flex:1; background:#64748b;" onclick="showSetup()">← Назад</button>
+            <button class="quiz-result-btn" style="flex:1;" onclick="prepareQuiz()">Ещё раз</button>
           </div>
-
-          <div class="quiz-result-breakdown">
-            База: ${quizCorrect} × 5 + 30 × ${quizLives} жизней${allLivesLeft ? ' + 100 бонус' : ''} = ${base}<br>
-            Стрик ×${streakMultiplier.toFixed(1)} | Таймер ×${timeMultiplier}${allLivesLeft ? ' | Все жизни ×1.5' : ''}
-          </div>
-
-          <div style="display:flex; gap:10px;">
-            <button class="quiz-result-btn" style="flex:1; background: linear-gradient(to right, #475569, #64748b);" onclick="showSetup()">
-              ← Назад
-            </button>
-            <button class="quiz-result-btn" style="flex:1;" onclick="startQuiz()">
-              Ещё раз
-            </button>
-          </div>
-        </div>`
+        </div>`;
     }
 
-    function toggleDropdown(e) {
-      e.stopPropagation()
-      document.getElementById('profile-btn').classList.toggle('open')
-    }
+    function toggleDropdown(e) { e.stopPropagation(); document.getElementById('profile-btn').classList.toggle('open'); }
+    document.addEventListener('click', (e) => { const p = document.getElementById('profile-btn'); if (p && !p.contains(e.target)) p.classList.remove('open'); });
+    async function logout() { await client.auth.signOut(); window.location.href = 'index.html'; }
 
-    document.addEventListener('click', function(e) {
-      const profile = document.getElementById('profile-btn')
-      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
-    })
-
-    async function logout() {
-      await client.auth.signOut()
-      window.location.href = 'index.html'
-    }
-
-    init()
+    init();
   </script>
-
 </body>
 </html>
