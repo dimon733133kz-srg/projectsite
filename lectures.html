@@ -192,9 +192,20 @@
 
     .admin-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
     .admin-row label { font-size: 12px; font-weight: bold; opacity: 0.8; }
+    
     #new-section-name { display: none; border: 1px solid var(--accent-blue); background: rgba(33, 150, 243, 0.05); }
     #json-editor { width: 100%; min-height: 300px; font-family: monospace; background: #1e293b; color: #4ade80; padding: 10px; border-radius: 8px; border: none; margin-top: 10px; }
     .admin-modal { max-width: 600px !important; width: 90% !important; }
+
+    body.dark .admin-modal { background: #1e293b !important; color: #f1f5f9 !important; }
+    body.dark .admin-modal select, 
+    body.dark .admin-modal input[type="text"] { 
+      background: #334155 !important; 
+      color: #fff !important; 
+      border: 1px solid #475569 !important; 
+    }
+    body.dark .admin-modal label { color: #94a3b8 !important; }
+    body.dark .file-drop-zone { background: rgba(255,255,255,0.05) !important; border: 2px dashed #475569 !important; }
   </style>
 
   <script>
