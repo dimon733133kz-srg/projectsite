@@ -183,10 +183,36 @@
         currentMoney = d.money ?? 0
         currentWins = d.wins ?? 0
         currentStreak = d.win_streak ?? 0
+        
         document.getElementById('profile-name').textContent = d.name
         document.getElementById('wins-count').textContent = currentWins
         document.getElementById('streak-count').textContent = currentStreak
-        if (d.profile_avatar) document.getElementById('profile-avatar-img').src = d.profile_avatar
+        
+        if (d.profile_avatar) {
+          document.getElementById('profile-avatar-img').src = d.profile_avatar
+        }
+
+        if (d.profile_bg) {
+          const btn = document.getElementById('profile-btn');
+          if (btn) {
+            btn.style.backgroundImage = `url('${d.profile_bg}')`;
+            btn.classList.add('has-bg');
+
+            let bgImg = btn.querySelector('.dynamic-bg');
+            if (!bgImg) {
+              bgImg = document.createElement('img');
+              bgImg.className = 'dynamic-bg';
+              bgImg.style.position = 'absolute';
+              bgImg.style.inset = '0';
+              bgImg.style.width = '100%';
+              bgImg.style.height = '100%';
+              bgImg.style.objectFit = 'cover';
+              bgImg.style.zIndex = '0';
+              btn.appendChild(bgImg);
+            }
+            bgImg.src = d.profile_bg;
+          }
+        }
       }
 
       allLessons = lessonsRes.data || []
