@@ -219,24 +219,46 @@
     let currentLessonId = null, editingLectureId = null
     let quizQuestions = [], quizLectureId = null, quizOrder = [], quizIndex = 0, quizCorrect = 0, quizTimer = null
 
-    async function init() {
-      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
+      async function init() {
       const { data: { session } } = await client.auth.getSession()
       if (!session) { window.location.href = 'index.html'; return }
+ 
       currentUserId = session.user.id
-      const { data: profile } = await client.from('profiles').select('*').eq('id', currentUserId).single()
-      if (profile) {
-        currentMoney = profile.money ?? 0
-        document.getElementById('profile-name').textContent = profile.name
-        document.getElementById('wins-count').textContent = profile.wins ?? 0
-        document.getElementById('streak-count').textContent = profile.win_streak ?? 0
-        if (profile.profile_avatar) document.getElementById('profile-avatar-img').src = profile.profile_avatar
+ 
+      const { data, error } = await client
+        .from('profiles')
+        .select('name, profile_bg, profile_avatar, wins, win_streak, money')
+        .eq('id', session.user.id)
+        .single()
+ 
+      if (error || !data) { window.location.href = 'index.html'; return }
+ 
+      currentMoney = data.money ?? 0
+      document.getElementById('profile-name').textContent = data.name
+      document.getElementById('wins-count').textContent = data.wins ?? 0
+      document.getElementById('streak-count').textContent = data.win_streak ?? 0
+ 
+      if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
+ 
+      if (data.profile_bg) {
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        const img = document.createElement('img')
+        img.src = data.profile_bg
+        img.style.position = 'absolute'
+        img.style.inset = '0'
+        img.style.width = '100%'
+        img.style.height = '100%'
+        img.style.objectFit = 'contain'
+        img.style.zIndex = '0'
+        btn.appendChild(img)
+        btn.classList.add('has-bg')
       }
-      const { data: results } = await client.from('quiz_results').select('lecture_id').eq('user_id', currentUserId)
-      userProgress = new Set(results?.map(r => r.lecture_id) || [])
+ 
       await loadTeacherPassword()
-      await loadAllData()
+      await loadSections()
     }
+
 
     async function loadAllData() {
       const [lRes, sRes, lecRes] = await Promise.all([
@@ -422,6 +444,146 @@
     async function logout() { await client.auth.signOut(); window.location.href = 'index.html' }
     function onFileSelected() { document.getElementById('file-drop-zone').textContent = '✅ Файл выбран' }
 
+    
+
+    function shuffle(arr) {
+      const a = [...arr]
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]]
+      }
+      return a
+    }
+ 
+    function startQuiz(questions, lectureId) {
+      if (!questions || questions.length === 0) return
+      quizQuestions = questions
+      quizLectureId = lectureId
+      quizOrder = shuffle(questions.map((_, i) => i))
+      quizIndex = 0
+      quizCorrect = 0
+      quizWrong = 0
+      quizSkipped = 0
+      document.getElementById('quiz-overlay').classList.add('active')
+      showQuestion()
+    }
+ 
+    function showQuestion() {
+      if (quizIndex >= quizOrder.length) { showResults(); return }
+      clearInterval(quizTimer)
+ 
+      const q = quizQuestions[quizOrder[quizIndex]]
+      let timeLeft = 20
+      let answered = false
+      const options = shuffle(q.options.map((opt, i) => ({ text: opt, idx: i })))
+ 
+      document.getElementById('quiz-box').innerHTML = `
+        <div class="quiz-top">
+          <div>${quizIndex + 1}/${quizOrder.length}</div>
+          <div class="quiz-timer" id="quiz-timer">⏱ ${timeLeft}</div>
+        </div>
+        <div class="quiz-question">${q.question}</div>
+        <div class="quiz-options">
+          ${options.map(opt => `<button class="quiz-option" data-id="${opt.idx}">${opt.text}</button>`).join('')}
+        </div>`
+ 
+      document.querySelectorAll('.quiz-option').forEach(btn => {
+        btn.onclick = () => {
+          if (answered) return
+          answered = true
+          clearInterval(quizTimer)
+          answerQuestion(parseInt(btn.dataset.id), q.answer)
+        }
+      })
+ 
+      quizTimer = setInterval(() => {
+        timeLeft--
+        const el = document.getElementById('quiz-timer')
+        if (!el) { clearInterval(quizTimer); return }
+        el.textContent = `⏱ ${timeLeft}`
+        if (timeLeft <= 5) el.classList.add('urgent')
+        if (timeLeft <= 0) {
+          if (answered) return
+          answered = true
+          clearInterval(quizTimer)
+          quizSkipped++
+          quizIndex++
+          showQuestion()
+        }
+      }, 1000)
+    }
+ 
+    function answerQuestion(selected, correct) {
+      if (selected === correct) quizCorrect++
+      else quizWrong++
+      quizIndex++
+      showQuestion()
+    }
+ 
+    async function showResults() {
+      const total = quizOrder.length
+      const percent = total > 0 ? Math.round((quizCorrect / total) * 1000) / 10 : 0
+      let reward = quizCorrect * 10
+      const isAllCorrect = quizCorrect === total && quizSkipped === 0 && quizWrong === 0
+      if (isAllCorrect) reward *= 2
+ 
+      if (currentUserId) {
+        const newMoney = currentMoney + reward
+        await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
+        currentMoney = newMoney
+        await client.from('quiz_results').insert({
+          user_id: currentUserId, lecture_id: quizLectureId,
+          correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped,
+          total, percent, reward
+        })
+      }
+ 
+      window._lastQuizResult = { correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped, total, percent, reward }
+      renderResultsBox(window._lastQuizResult, isAllCorrect)
+    }
+ 
+    function showSavedResult(r) {
+      document.getElementById('quiz-overlay').classList.add('active')
+      renderResultsBox(r, r.correct === r.total && r.skipped === 0 && r.wrong === 0)
+    }
+ 
+    function renderResultsBox(r, isAllCorrect) {
+      document.getElementById('quiz-box').innerHTML = `
+        <div class="quiz-results">
+          <div class="quiz-results-title">Результаты теста</div>
+          <div class="quiz-results-score">${r.percent}%</div>
+          <div class="quiz-results-grid">
+            <div class="quiz-stat-card total"><div class="quiz-stat-label">Всего</div><div class="quiz-stat-value">${r.total}</div></div>
+            <div class="quiz-stat-card correct"><div class="quiz-stat-label">Правильно</div><div class="quiz-stat-value">${r.correct}</div></div>
+            <div class="quiz-stat-card wrong"><div class="quiz-stat-label">Неправильно</div><div class="quiz-stat-value">${r.wrong}</div></div>
+            <div class="quiz-stat-card skipped"><div class="quiz-stat-label">Пропущено</div><div class="quiz-stat-value">${r.skipped}</div></div>
+          </div>
+          <div class="quiz-reward">
+            ${isAllCorrect ? '🎉 Все правильно! Бонус x2!' : '💰 Награда'}
+            <div class="quiz-reward-amount">+${r.reward} 🪙</div>
+          </div>
+          <button class="quiz-close-btn" onclick="closeQuiz()">Закрыть</button>
+        </div>`
+    }
+ 
+    function closeQuiz() {
+      clearInterval(quizTimer)
+      document.getElementById('quiz-overlay').classList.remove('active')
+      if (window._lastQuizResult && activeLectureBtn) {
+        const r = window._lastQuizResult
+        const btn = document.getElementById('start-test-btn')
+        if (btn) {
+          btn.style.background = 'linear-gradient(to right, #475569, #64748b)'
+          btn.textContent = `📊 Посмотреть результат (${r.percent}%)`
+          btn.onclick = () => showSavedResult(r)
+        }
+        window._lastQuizResult = null
+      }
+    }
+
+
+
+    
     init()
   </script>
 </body>
