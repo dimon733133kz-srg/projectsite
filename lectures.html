@@ -510,7 +510,94 @@ function checkTeacherPassword() {
     function toggleDropdown(e) { e.stopPropagation(); document.getElementById('profile-btn').classList.toggle('open') }
     async function logout() { await client.auth.signOut(); window.location.href = 'index.html' }
     function onFileSelected() { document.getElementById('file-drop-zone').textContent = '✅ Файл выбран' }
+function showQuestion() {
+    const quizBox = document.getElementById('quiz-box');
+    const q = quizQuestions[quizIndex];
+    
+    const optionsHtml = q.options.map((opt, i) => `
+        <button class="modal-btn" style="width:100%; margin-bottom:8px; text-align:left;" onclick="handleAnswer(${i})">
+            ${i + 1}. ${opt}
+        </button>
+    `).join('');
 
+    quizBox.innerHTML = `
+        <div class="modal-title">Вопрос ${quizIndex + 1} из ${quizQuestions.length}</div>
+        <div class="modal-desc" style="font-size: 1.1rem; margin-bottom: 20px;">${q.question}</div>
+        <div class="quiz-options">${optionsHtml}</div>
+        <div id="quiz-feedback" style="margin-top:15px; font-weight:bold;"></div>
+    `;
+}
+
+function startQuiz(questions, id) {
+    quizQuestions = questions;
+    quizLectureId = id;
+    quizIndex = 0;
+    quizCorrect = 0;
+    
+    document.getElementById('quiz-overlay').classList.add('active');
+    showQuestion();
+}
+
+async function handleAnswer(idx) {
+    const q = quizQuestions[quizIndex];
+    const feedback = document.getElementById('quiz-feedback');
+    const buttons = document.querySelectorAll('.quiz-options button');
+    
+    buttons.forEach(b => b.style.pointerEvents = 'none');
+
+    if (idx === q.answer) {
+        feedback.style.color = '#4ade80';
+        feedback.textContent = "✅ Правильно!";
+        quizCorrect++;
+    } else {
+        feedback.style.color = '#ef4444';
+        feedback.textContent = `❌ Ошибка! Правильный ответ: ${q.options[q.answer]}`;
+    }
+
+    setTimeout(() => {
+        quizIndex++;
+        if (quizIndex < quizQuestions.length) {
+            showQuestion();
+        } else {
+            finishQuiz();
+        }
+    }, 1500);
+}
+
+async function finishQuiz() {
+    const quizBox = document.getElementById('quiz-box');
+    const percent = Math.round((quizCorrect / quizQuestions.length) * 100);
+    const isPassed = percent >= 20;
+
+    quizBox.innerHTML = `
+        <div class="modal-title">Результат теста</div>
+        <div class="modal-desc">
+            Правильных ответов: <b>${quizCorrect}</b> из ${quizQuestions.length} (${percent}%)
+        </div>
+        <div class="modal-btns">
+            <button class="modal-btn confirm" onclick="closeQuiz()">Завершить</button>
+        </div>
+    `;
+
+    if (isPassed && !userProgress.has(quizLectureId)) {
+        await client.from('quiz_results').insert({
+            user_id: currentUserId,
+            lecture_id: quizLectureId,
+            score: percent
+        });
+
+        const { data: profile } = await client.from('profiles').select('money').eq('id', currentUserId).single();
+        const newMoney = (profile.money || 0) + 100;
+        await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId);
+
+        userProgress.add(quizLectureId);
+        renderSidebar();
+    }
+}
+
+function closeQuiz() {
+    document.getElementById('quiz-overlay').classList.remove('active');
+}
     init()
   </script>
 </body>
