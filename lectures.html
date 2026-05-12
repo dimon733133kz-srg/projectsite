@@ -220,23 +220,53 @@
     let quizQuestions = [], quizLectureId = null, quizOrder = [], quizIndex = 0, quizCorrect = 0, quizTimer = null
 
     async function init() {
-      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
-      const { data: { session } } = await client.auth.getSession()
-      if (!session) { window.location.href = 'index.html'; return }
-      currentUserId = session.user.id
-      const { data: profile } = await client.from('profiles').select('*').eq('id', currentUserId).single()
-      if (profile) {
-        currentMoney = profile.money ?? 0
-        document.getElementById('profile-name').textContent = profile.name
-        document.getElementById('wins-count').textContent = profile.wins ?? 0
-        document.getElementById('streak-count').textContent = profile.win_streak ?? 0
-        if (profile.profile_avatar) document.getElementById('profile-avatar-img').src = profile.profile_avatar
-      }
-      const { data: results } = await client.from('quiz_results').select('lecture_id').eq('user_id', currentUserId)
-      userProgress = new Set(results?.map(r => r.lecture_id) || [])
-      await loadTeacherPassword()
-      await loadAllData()
+  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
+  
+  const { data: { session } } = await client.auth.getSession()
+  if (!session) { window.location.href = 'index.html'; return }
+  currentUserId = session.user.id
+
+  const { data: profile } = await client.from('profiles').select('*').eq('id', currentUserId).single()
+  
+  if (profile) {
+    currentMoney = profile.money ?? 0
+    document.getElementById('profile-name').textContent = profile.name
+    document.getElementById('wins-count').textContent = profile.wins ?? 0
+    document.getElementById('streak-count').textContent = profile.win_streak ?? 0
+    
+    if (profile.profile_avatar) {
+      document.getElementById('profile-avatar-img').src = profile.profile_avatar
     }
+    
+    if (profile.profile_bg) {
+      const btn = document.getElementById('profile-btn');
+      if (btn) {
+        btn.style.backgroundImage = `url('${profile.profile_bg}')`;
+        btn.classList.add('has-bg');
+
+        let bgImg = btn.querySelector('.dynamic-bg');
+        if (!bgImg) {
+          bgImg = document.createElement('img');
+          bgImg.className = 'dynamic-bg';
+          bgImg.style.position = 'absolute';
+          bgImg.style.inset = '0';
+          bgImg.style.width = '100%';
+          bgImg.style.height = '100%';
+          bgImg.style.objectFit = 'cover';
+          bgImg.style.zIndex = '0';
+          btn.appendChild(bgImg);
+        }
+        bgImg.src = profile.profile_bg;
+      }
+    }
+  }
+
+  const { data: results } = await client.from('quiz_results').select('lecture_id').eq('user_id', currentUserId)
+  userProgress = new Set(results?.map(r => r.lecture_id) || [])
+  
+  await loadTeacherPassword()
+  await loadAllData()
+}
 
     async function loadAllData() {
       const [lRes, sRes, lecRes] = await Promise.all([
