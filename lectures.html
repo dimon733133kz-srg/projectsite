@@ -581,6 +581,49 @@
       }
     }
 
+    async function loadSections() {
+      const { data: sections, error } = await client
+        .from('sections')
+        .select('id, title, order')
+        .order('order', { ascending: true })
+ 
+      if (error || !sections || sections.length === 0) {
+        document.getElementById('sections-list').innerHTML =
+          '<div style="padding:20px;font-size:13px;color:#94a3b8;">Разделов пока нет</div>'
+        allSections = []
+        return
+      }
+ 
+      allSections = sections
+ 
+      const { data: lectures } = await client
+        .from('lectures')
+        .select('id, title, section_id, order')
+        .order('order', { ascending: true })
+ 
+      const list = document.getElementById('sections-list')
+      list.innerHTML = ''
+ 
+      sections.forEach(section => {
+        const sectionLectures = lectures ? lectures.filter(l => l.section_id === section.id) : []
+        const sectionEl = document.createElement('div')
+        sectionEl.className = 'section-item'
+        sectionEl.innerHTML = `
+          <button class="section-toggle" onclick="toggleSection(this)">
+            ${section.title}
+            <span class="section-arrow">▼</span>
+          </button>
+          <div class="section-lectures">
+            ${sectionLectures.length === 0
+              ? '<div style="padding:10px 20px 10px 36px;font-size:13px;color:#94a3b8;">Лекций пока нет</div>'
+              : sectionLectures.map(l => `
+                <button class="lecture-btn" onclick="loadLecture('${l.id}', this)">
+                  ${l.title}
+                </button>`).join('')}
+          </div>`
+        list.appendChild(sectionEl)
+      })
+    }
 
 
     
