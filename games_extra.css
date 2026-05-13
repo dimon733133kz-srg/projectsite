@@ -1,13 +1,16 @@
-/* ===== ПОДСВЕТКА СИНТАКСИСА ===== */
 .code-highlight-wrap {
   position: relative;
   flex: 1;
   min-height: 220px;
+  display: flex;
+  flex-direction: column;
 }
 
 .code-highlight-wrap textarea.code-editor {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   background: transparent;
   color: transparent;
   caret-color: #e2e8f0;
@@ -22,11 +25,14 @@
   overflow: auto;
   white-space: pre;
   tab-size: 4;
+  box-sizing: border-box;
 }
 
 .code-highlight-pre {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   background: #0f172a;
   color: #e2e8f0;
   padding: 20px 24px;
@@ -40,9 +46,9 @@
   z-index: 1;
   pointer-events: none;
   border: none;
+  box-sizing: border-box;
 }
 
-/* Токены подсветки */
 .tok-keyword { color: #c792ea; font-weight: bold; }
 .tok-builtin { color: #82aaff; }
 .tok-string { color: #c3e88d; }
@@ -55,7 +61,6 @@
 .tok-none { color: #ff5572; }
 .tok-self { color: #f07178; font-style: italic; }
 
-/* ===== БЫСТРАЯ ПЕЧАТЬ ===== */
 .typing-setup-box {
   display: flex;
   flex-direction: column;
@@ -131,7 +136,6 @@
 .typing-start-btn:hover { opacity: 0.88; }
 .typing-start-btn:disabled { opacity: 0.4; cursor: default; }
 
-/* Игровой экран печати */
 .typing-game-layout {
   display: flex;
   flex-direction: column;
@@ -177,7 +181,6 @@
   color: #dc2626;
 }
 
-/* Окно с текстом для печати */
 .typing-display-wrap {
   position: relative;
   flex: 1;
@@ -240,7 +243,6 @@
 .char-wrong { color: #ef4444; background: rgba(239,68,68,0.2); border-radius: 2px; }
 .char-cursor { border-left: 2px solid #FDD835; }
 
-/* Результат печати */
 .typing-result-box {
   background: var(--bg-card, white);
   border-radius: 20px;
@@ -300,7 +302,6 @@
 .typing-result-btn.secondary { background: var(--bg, #f1f5f9); color: var(--text-secondary, #64748b); }
 .typing-result-btn:hover { opacity: 0.88; }
 
-/* Темная тема */
 body.dark .typing-setup-inner { background: #1e293b; }
 body.dark .typing-setup-title { color: #e2e8f0; }
 body.dark .typing-diff-btn { background: #111827; border-color: #334155; color: #e2e8f0; }
