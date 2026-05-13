@@ -591,36 +591,48 @@ builtins.input = _input
       }, 1000)
     }
  
-    function onTypingInput() {
-      if (typingFinished) return
-      const input = document.getElementById('typing-input')
-      const typed = input.value
-      const target = typingText
-      const charsEl = document.getElementById('typing-chars')
- 
-      let html = ''
-      let errorCount = 0
- 
-      for (let i = 0; i < typed.length; i++) {
-        if (i < target.length) {
-          if (typed[i] === target[i]) {
-            html += `<span class="char-correct">${escHtml(typed[i])}</span>`
-          } else {
-            html += `<span class="char-wrong">${escHtml(target[i])}</span>`
-            errorCount++
-          }
-        }
+function onTypingInput() {
+  if (typingFinished) return
+  const input = document.getElementById('typing-input')
+  const typed = input.value
+  const target = typingText
+  const charsEl = document.getElementById('typing-chars')
+
+  let html = ''
+  let errorCount = 0
+
+  for (let i = 0; i < typed.length; i++) {
+    if (i >= target.length) break
+    const typedChar = typed[i]
+    const targetChar = target[i]
+
+    if (targetChar === ' ' || targetChar === '\n') {
+      if (typedChar === ' ' || typedChar === '\n') {
+        html += `<span class="char-correct">${escHtml(targetChar)}</span>`
+      } else {
+        html += `<span class="char-wrong">${escHtml(targetChar)}</span>`
+        errorCount++
       }
- 
-      charsEl.innerHTML = html
-      typingErrors = errorCount
-      document.getElementById('errors-count').textContent = errorCount
- 
-      if (typed === target) {
-        clearTypingTimer()
-        finishTyping(true)
+    } else {
+      if (typedChar === targetChar) {
+        html += `<span class="char-correct">${escHtml(typedChar)}</span>`
+      } else {
+        html += `<span class="char-wrong">${escHtml(targetChar)}</span>`
+        errorCount++
       }
     }
+  }
+
+  charsEl.innerHTML = html
+  typingErrors = errorCount
+  document.getElementById('errors-count').textContent = errorCount
+
+  const normalizeSpaces = s => s.replace(/[ \t]+/g, ' ').replace(/\n /g, '\n').trim()
+  if (normalizeSpaces(typed) === normalizeSpaces(target)) {
+    clearTypingTimer()
+    finishTyping(true)
+  }
+}
  
     function clearTypingTimer() {
       if (typingTimer) { clearInterval(typingTimer); typingTimer = null }
