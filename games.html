@@ -5,34 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Игры</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="games_extra.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
+ 
   <header>
     <div class="logo">
-      <a href="main.html">
-        <img src="logo.png" alt="Логотип">
-      </a>
+      <a href="main.html"><img src="logo.png" alt="Логотип"></a>
     </div>
-
     <div class="header-right">
       <div class="stat-badge wins" onclick="this.classList.toggle('show-count')">
-  <img src="icons/wins.png" alt="Победы">
-  <span id="wins-count">0</span>
-</div>
-<div class="stat-badge streak" onclick="this.classList.toggle('show-count')">
-  <img src="icons/streak.png" alt="Стрик">
-  <span id="streak-count">0</span>
-</div>
-
+        <img src="icons/wins.png" alt="Победы">
+        <span id="wins-count">0</span>
+      </div>
+      <div class="stat-badge streak" onclick="this.classList.toggle('show-count')">
+        <img src="icons/streak.png" alt="Стрик">
+        <span id="streak-count">0</span>
+      </div>
       <div class="profile" id="profile-btn" onclick="toggleDropdown(event)">
         <div class="profile-icon">
           <img src="icons/profile-default.png" alt="Профиль" id="profile-avatar-img">
         </div>
         <span class="profile-name" id="profile-name">Загрузка...</span>
         <span class="profile-arrow">▼</span>
-
         <div class="dropdown">
           <a href="settings.html">⚙️ Настройки</a>
           <div class="divider"></div>
@@ -41,11 +37,11 @@
       </div>
     </div>
   </header>
-
+ 
   <main>
-    <div id="main-content" style="flex:1; display:flex; align-items:stretch; padding:30px; width:100%;"></div>
+    <div id="main-content" style="flex:1;display:flex;align-items:stretch;padding:30px;width:100%;"></div>
   </main>
-
+ 
   <footer>
     <div class="credits">
       <span>Разработчик: <span class="credit-person">Петряков Дмитрий</span></span>
@@ -53,18 +49,16 @@
     </div>
     <div>©2026 Все права защищены.</div>
   </footer>
-
+ 
   <script>
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
+ 
     const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
-	  
+ 
     const { createClient } = supabase
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-	if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }  
-
+ 
     let currentUserId = null
     let currentMoney = 0
     let pyodide = null
@@ -72,183 +66,197 @@
     let currentMode = 'task'
     let currentTask = null
     let taskSolved = false
+ 
+    const PY_KEYWORDS = ['def','class','return','import','from','as','if','elif','else','for','while','in','not','and','or','is','None','True','False','try','except','finally','with','yield','lambda','pass','break','continue','raise','del','global','nonlocal','assert']
+    const PY_BUILTINS = ['print','input','len','range','int','float','str','list','dict','tuple','set','bool','type','isinstance','hasattr','getattr','setattr','enumerate','zip','map','filter','sorted','reversed','sum','min','max','abs','round','open','super','property']
+ 
+    function highlightPython(code) {
+      const lines = code.split('\n')
+      return lines.map(line => {
+        let result = ''
+        let i = 0
+ 
+        while (i < line.length) {
 
-    const TASKS = [
-      {
-        id: 1,
-        title: 'Сумма двух чисел',
-        desc: 'Напиши функцию `add(a, b)` которая возвращает сумму двух чисел.',
-        examples: ['add(2, 3) → 5', 'add(-1, 10) → 9'],
-        tests: [
-          { call: 'add(2, 3)', expected: 5 },
-          { call: 'add(-1, 10)', expected: 9 },
-          { call: 'add(0, 0)', expected: 0 },
-          { call: 'add(100, 200)', expected: 300 },
-        ],
-        reward: 50
-      },
-      {
-        id: 2,
-        title: 'Чётное или нечётное',
-        desc: 'Напиши функцию `is_even(n)` которая возвращает `True` если число чётное, и `False` если нечётное.',
-        examples: ['is_even(4) → True', 'is_even(7) → False'],
-        tests: [
-          { call: 'is_even(4)', expected: true },
-          { call: 'is_even(7)', expected: false },
-          { call: 'is_even(0)', expected: true },
-          { call: 'is_even(-3)', expected: false },
-        ],
-        reward: 50
-      },
-      {
-        id: 3,
-        title: 'Максимум из трёх',
-        desc: 'Напиши функцию `max3(a, b, c)` которая возвращает наибольшее из трёх чисел.',
-        examples: ['max3(1, 5, 3) → 5', 'max3(10, 2, 8) → 10'],
-        tests: [
-          { call: 'max3(1, 5, 3)', expected: 5 },
-          { call: 'max3(10, 2, 8)', expected: 10 },
-          { call: 'max3(-1, -5, -3)', expected: -1 },
-          { call: 'max3(7, 7, 7)', expected: 7 },
-        ],
-        reward: 60
-      },
-      {
-        id: 4,
-        title: 'Факториал',
-        desc: 'Напиши функцию `factorial(n)` которая возвращает факториал числа n.',
-        examples: ['factorial(5) → 120', 'factorial(0) → 1'],
-        tests: [
-          { call: 'factorial(0)', expected: 1 },
-          { call: 'factorial(1)', expected: 1 },
-          { call: 'factorial(5)', expected: 120 },
-          { call: 'factorial(7)', expected: 5040 },
-        ],
-        reward: 80
-      },
-      {
-        id: 5,
-        title: 'Переворот строки',
-        desc: 'Напиши функцию `reverse_str(s)` которая возвращает строку в обратном порядке.',
-        examples: ['reverse_str("hello") → "olleh"', 'reverse_str("abc") → "cba"'],
-        tests: [
-          { call: 'reverse_str("hello")', expected: 'olleh' },
-          { call: 'reverse_str("abc")', expected: 'cba' },
-          { call: 'reverse_str("a")', expected: 'a' },
-          { call: 'reverse_str("Python")', expected: 'nohtyP' },
-        ],
-        reward: 70
-      },
-      {
-        id: 6,
-        title: 'Сумма списка',
-        desc: 'Напиши функцию `sum_list(lst)` которая возвращает сумму всех элементов списка.',
-        examples: ['sum_list([1, 2, 3]) → 6', 'sum_list([10, -5, 3]) → 8'],
-        tests: [
-          { call: 'sum_list([1, 2, 3])', expected: 6 },
-          { call: 'sum_list([10, -5, 3])', expected: 8 },
-          { call: 'sum_list([])', expected: 0 },
-          { call: 'sum_list([100])', expected: 100 },
-        ],
-        reward: 60
-      },
-      {
-        id: 7,
-        title: 'Палиндром',
-        desc: 'Напиши функцию `is_palindrome(s)` которая возвращает `True` если строка является палиндромом.',
-        examples: ['is_palindrome("radar") → True', 'is_palindrome("hello") → False'],
-        tests: [
-          { call: 'is_palindrome("radar")', expected: true },
-          { call: 'is_palindrome("hello")', expected: false },
-          { call: 'is_palindrome("a")', expected: true },
-          { call: 'is_palindrome("abba")', expected: true },
-        ],
-        reward: 80
-      },
-      {
-        id: 8,
-        title: 'Подсчёт гласных',
-        desc: 'Напиши функцию `count_vowels(s)` которая считает количество гласных букв (a, e, i, o, u) в строке.',
-        examples: ['count_vowels("hello") → 2', 'count_vowels("python") → 1'],
-        tests: [
-          { call: 'count_vowels("hello")', expected: 2 },
-          { call: 'count_vowels("python")', expected: 1 },
-          { call: 'count_vowels("aeiou")', expected: 5 },
-          { call: 'count_vowels("xyz")', expected: 0 },
-        ],
-        reward: 70
-      },
-      {
-        id: 9,
-        title: 'Число Фибоначчи',
-        desc: 'Напиши функцию `fib(n)` которая возвращает n-е число Фибоначчи (начиная с fib(0)=0, fib(1)=1).',
-        examples: ['fib(6) → 8', 'fib(0) → 0'],
-        tests: [
-          { call: 'fib(0)', expected: 0 },
-          { call: 'fib(1)', expected: 1 },
-          { call: 'fib(6)', expected: 8 },
-          { call: 'fib(10)', expected: 55 },
-        ],
-        reward: 100
-      },
-      {
-        id: 10,
-        title: 'FizzBuzz',
-        desc: 'Напиши функцию `fizzbuzz(n)` которая возвращает "Fizz" если n делится на 3, "Buzz" если на 5, "FizzBuzz" если на оба, иначе само число как строку.',
-        examples: ['fizzbuzz(3) → "Fizz"', 'fizzbuzz(15) → "FizzBuzz"'],
-        tests: [
-          { call: 'fizzbuzz(3)', expected: 'Fizz' },
-          { call: 'fizzbuzz(5)', expected: 'Buzz' },
-          { call: 'fizzbuzz(15)', expected: 'FizzBuzz' },
-          { call: 'fizzbuzz(7)', expected: '7' },
-        ],
-        reward: 90
+          if (line[i] === '#') {
+            result += `<span class="tok-comment">${escHtml(line.slice(i))}</span>`
+            break
+          }
+
+          if (line[i] === '"' || line[i] === "'") {
+            const q = line[i]
+            let end = i + 1
+            const triple = line.slice(i, i+3) === q+q+q
+            if (triple) end = i + 3
+            while (end < line.length) {
+              if (triple && line.slice(end, end+3) === q+q+q) { end += 3; break }
+              if (!triple && line[end] === q && line[end-1] !== '\\') { end++; break }
+              end++
+            }
+            result += `<span class="tok-string">${escHtml(line.slice(i, end))}</span>`
+            i = end; continue
+          }
+ 
+          if (/\d/.test(line[i]) && (i === 0 || /\W/.test(line[i-1]))) {
+            let end = i
+            while (end < line.length && /[\d.xXbBoO]/.test(line[end])) end++
+            result += `<span class="tok-number">${escHtml(line.slice(i, end))}</span>`
+            i = end; continue
+          }
+			
+          if (line[i] === '@') {
+            let end = i + 1
+            while (end < line.length && /[\w.]/.test(line[end])) end++
+            result += `<span class="tok-decorator">${escHtml(line.slice(i, end))}</span>`
+            i = end; continue
+          }
+
+          if (/[a-zA-Z_]/.test(line[i])) {
+            let end = i
+            while (end < line.length && /[\w]/.test(line[end])) end++
+            const word = line.slice(i, end)
+            if (PY_KEYWORDS.includes(word)) {
+              if (word === 'None' || word === 'True' || word === 'False') {
+                result += `<span class="tok-boolean">${word}</span>`
+              } else {
+                result += `<span class="tok-keyword">${word}</span>`
+              }
+            } else if (PY_BUILTINS.includes(word)) {
+              result += `<span class="tok-builtin">${word}</span>`
+            } else if (word === 'self' || word === 'cls') {
+              result += `<span class="tok-self">${word}</span>`
+            } else if (end < line.length && line[end] === '(') {
+              result += `<span class="tok-function">${word}</span>`
+            } else {
+              result += escHtml(word)
+            }
+            i = end; continue
+          }
+			
+          if (/[+\-*\/=<>!&|^~%]/.test(line[i])) {
+            result += `<span class="tok-operator">${escHtml(line[i])}</span>`
+            i++; continue
+          }
+          result += escHtml(line[i])
+          i++
+        }
+        return result
+      }).join('\n')
+    }
+ 
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    }
+ 
+    function setupHighlightedEditor(textareaId, preId) {
+      const ta = document.getElementById(textareaId)
+      const pre = document.getElementById(preId)
+      if (!ta || !pre) return
+ 
+      function sync() {
+        pre.innerHTML = highlightPython(ta.value) + '\n'
+        pre.scrollTop = ta.scrollTop
+        pre.scrollLeft = ta.scrollLeft
       }
+ 
+      ta.addEventListener('input', sync)
+      ta.addEventListener('scroll', () => {
+        pre.scrollTop = ta.scrollTop
+        pre.scrollLeft = ta.scrollLeft
+      })
+      ta.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+          e.preventDefault()
+          const s = this.selectionStart, end = this.selectionEnd
+          this.value = this.value.substring(0, s) + '    ' + this.value.substring(end)
+          this.selectionStart = this.selectionEnd = s + 4
+          sync()
+        }
+      })
+      sync()
+    }
+ 
+    const TASKS = [
+      { id:1, title:'Сумма двух чисел', desc:'Напиши функцию `add(a, b)` которая возвращает сумму двух чисел.', examples:['add(2, 3) → 5','add(-1, 10) → 9'], tests:[{call:'add(2, 3)',expected:5},{call:'add(-1, 10)',expected:9},{call:'add(0, 0)',expected:0},{call:'add(100, 200)',expected:300}], reward:50 },
+      { id:2, title:'Чётное или нечётное', desc:'Напиши функцию `is_even(n)` которая возвращает `True` если число чётное.', examples:['is_even(4) → True','is_even(7) → False'], tests:[{call:'is_even(4)',expected:true},{call:'is_even(7)',expected:false},{call:'is_even(0)',expected:true},{call:'is_even(-3)',expected:false}], reward:50 },
+      { id:3, title:'Максимум из трёх', desc:'Напиши функцию `max3(a, b, c)` которая возвращает наибольшее из трёх чисел.', examples:['max3(1, 5, 3) → 5'], tests:[{call:'max3(1, 5, 3)',expected:5},{call:'max3(10, 2, 8)',expected:10},{call:'max3(-1, -5, -3)',expected:-1},{call:'max3(7, 7, 7)',expected:7}], reward:60 },
+      { id:4, title:'Факториал', desc:'Напиши функцию `factorial(n)` которая возвращает факториал числа n.', examples:['factorial(5) → 120'], tests:[{call:'factorial(0)',expected:1},{call:'factorial(1)',expected:1},{call:'factorial(5)',expected:120},{call:'factorial(7)',expected:5040}], reward:80 },
+      { id:5, title:'Переворот строки', desc:'Напиши функцию `reverse_str(s)` которая возвращает строку в обратном порядке.', examples:['reverse_str("hello") → "olleh"'], tests:[{call:'reverse_str("hello")',expected:'olleh'},{call:'reverse_str("abc")',expected:'cba'},{call:'reverse_str("a")',expected:'a'}], reward:70 },
+      { id:6, title:'Сумма списка', desc:'Напиши функцию `sum_list(lst)` которая возвращает сумму всех элементов списка.', examples:['sum_list([1, 2, 3]) → 6'], tests:[{call:'sum_list([1, 2, 3])',expected:6},{call:'sum_list([10, -5, 3])',expected:8},{call:'sum_list([])',expected:0}], reward:60 },
+      { id:7, title:'Палиндром', desc:'Напиши функцию `is_palindrome(s)` которая возвращает `True` если строка палиндром.', examples:['is_palindrome("radar") → True'], tests:[{call:'is_palindrome("radar")',expected:true},{call:'is_palindrome("hello")',expected:false},{call:'is_palindrome("abba")',expected:true}], reward:80 },
+      { id:8, title:'Подсчёт гласных', desc:'Напиши функцию `count_vowels(s)` которая считает гласные (a,e,i,o,u).', examples:['count_vowels("hello") → 2'], tests:[{call:'count_vowels("hello")',expected:2},{call:'count_vowels("python")',expected:1},{call:'count_vowels("aeiou")',expected:5}], reward:70 },
+      { id:9, title:'Число Фибоначчи', desc:'Напиши функцию `fib(n)` которая возвращает n-е число Фибоначчи.', examples:['fib(6) → 8'], tests:[{call:'fib(0)',expected:0},{call:'fib(1)',expected:1},{call:'fib(6)',expected:8},{call:'fib(10)',expected:55}], reward:100 },
+      { id:10, title:'FizzBuzz', desc:'Напиши функцию `fizzbuzz(n)` — "Fizz" если делится на 3, "Buzz" на 5, "FizzBuzz" на оба, иначе строка числа.', examples:['fizzbuzz(15) → "FizzBuzz"'], tests:[{call:'fizzbuzz(3)',expected:'Fizz'},{call:'fizzbuzz(5)',expected:'Buzz'},{call:'fizzbuzz(15)',expected:'FizzBuzz'},{call:'fizzbuzz(7)',expected:'7'}], reward:90 }
     ]
-
+ 
+    const TYPING_TEXTS = {
+      easy: [
+        'x = 5\ny = 10\nprint(x + y)',
+        'name = "Python"\nprint(name)',
+        'for i in range(5):\n    print(i)',
+        'a = [1, 2, 3]\nprint(len(a))',
+        'if x > 0:\n    print("positive")\nelse:\n    print("negative")',
+      ],
+      medium: [
+        'def add(a, b):\n    return a + b\n\nresult = add(3, 7)\nprint(result)',
+        'def is_even(n):\n    return n % 2 == 0\n\nfor i in range(10):\n    if is_even(i):\n        print(i)',
+        'numbers = [1, 2, 3, 4, 5]\nsquares = [x ** 2 for x in numbers]\nprint(squares)',
+        'def factorial(n):\n    if n == 0:\n        return 1\n    return n * factorial(n - 1)',
+        'words = ["hello", "world", "python"]\nfor word in words:\n    print(word.upper())',
+      ],
+      hard: [
+        'def binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1',
+        'class Stack:\n    def __init__(self):\n        self.items = []\n\n    def push(self, item):\n        self.items.append(item)\n\n    def pop(self):\n        return self.items.pop() if self.items else None\n\n    def is_empty(self):\n        return len(self.items) == 0',
+        'def merge_sort(arr):\n    if len(arr) <= 1:\n        return arr\n    mid = len(arr) // 2\n    left = merge_sort(arr[:mid])\n    right = merge_sort(arr[mid:])\n    return merge(left, right)\n\ndef merge(left, right):\n    result = []\n    i = j = 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            result.append(left[i])\n            i += 1\n        else:\n            result.append(right[j])\n            j += 1\n    return result + left[i:] + right[j:]',
+      ]
+    }
+ 
+    const TYPING_CONFIG = {
+      easy:   { time: 30, base: 50,  perSec: 20, label: 'Лёгкий' },
+      medium: { time: 30, base: 100, perSec: 30, label: 'Средний' },
+      hard:   { time: 30, base: 150, perSec: 50, label: 'Тяжёлый' }
+    }
+ 
+    let typingDiff = null
+    let typingText = ''
+    let typingTimer = null
+    let typingTimeLeft = 30
+    let typingErrors = 0
+    let typingFinished = false
+ 
     async function init() {
       const { data: { session } } = await client.auth.getSession()
       if (!session) { window.location.href = 'index.html'; return }
-
       currentUserId = session.user.id
-
+ 
       const { data, error } = await client
         .from('profiles')
         .select('name, profile_bg, profile_avatar, wins, win_streak, money')
         .eq('id', session.user.id)
         .single()
-
+ 
       if (error || !data) { window.location.href = 'index.html'; return }
-
+ 
       currentMoney = data.money ?? 0
-
       document.getElementById('profile-name').textContent = data.name
       document.getElementById('wins-count').textContent = data.wins ?? 0
       document.getElementById('streak-count').textContent = data.win_streak ?? 0
-
       if (data.profile_avatar) document.getElementById('profile-avatar-img').src = data.profile_avatar
-
       if (data.profile_bg) {
-  const btn = document.getElementById('profile-btn')
-  btn.style.backgroundImage = `url('${data.profile_bg}')`
-
-  const img = document.createElement('img')
-  img.src = data.profile_bg
-  img.style.position = 'absolute'
-  img.style.inset = '0'
-  img.style.width = '100%'
-  img.style.height = '100%'
-  img.style.objectFit = 'contain'
-  img.style.zIndex = '0'
-
-  btn.appendChild(img)
-  btn.classList.add('has-bg')
-}
-
+        const btn = document.getElementById('profile-btn')
+        btn.style.backgroundImage = `url('${data.profile_bg}')`
+        const img = document.createElement('img')
+        img.src = data.profile_bg
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:0;'
+        btn.appendChild(img)
+        btn.classList.add('has-bg')
+      }
+ 
       showGameSelect()
     }
-
+ 
     function showGameSelect() {
+      clearTypingTimer()
       const content = document.getElementById('main-content')
       content.style.alignItems = 'center'
       content.style.justifyContent = 'center'
@@ -259,9 +267,14 @@
             <div class="game-card-title">Компилятор</div>
             <div class="game-card-desc">Реши задачи на Python или просто попробуй код</div>
           </button>
+          <button class="game-card" onclick="showTypingSetup()">
+            <div class="game-card-icon">⌨️</div>
+            <div class="game-card-title">Быстрая печать</div>
+            <div class="game-card-desc">Печатай Python код как можно быстрее</div>
+          </button>
         </div>`
     }
-
+ 
     function showCompiler() {
       currentMode = 'task'
       const content = document.getElementById('main-content')
@@ -276,7 +289,7 @@
             <button class="compiler-mode-btn" id="btn-sandbox" onclick="setMode('sandbox')">
               <span class="compiler-mode-btn-icon">🏖️</span> Песочница
             </button>
-            <div style="height:1px; background:rgba(255,255,255,0.1); margin:8px;"></div>
+            <div style="height:1px;background:rgba(255,255,255,0.1);margin:8px;"></div>
             <button class="compiler-mode-btn" onclick="showGameSelect()" style="margin-top:auto;">
               <span class="compiler-mode-btn-icon">←</span> Назад
             </button>
@@ -288,69 +301,55 @@
               <div class="pyodide-loader-bar">
                 <div class="pyodide-loader-fill" id="loader-fill" style="width:0%"></div>
               </div>
-              <div id="loader-text" style="font-size:12px; color:#94a3b8;">Подготовка...</div>
+              <div id="loader-text" style="font-size:12px;color:#94a3b8;">Подготовка...</div>
             </div>
           </div>
         </div>`
-
       loadPyodide()
     }
-
+ 
     async function loadPyodide() {
       if (pyodide) { renderMode(); return }
       if (pyodideLoading) return
       pyodideLoading = true
-
       try {
         const fill = document.getElementById('loader-fill')
         const text = document.getElementById('loader-text')
-
         if (fill) fill.style.width = '20%'
-        if (text) text.textContent = 'Загрузка интерпретатора...'
-
         const script = document.createElement('script')
         script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js'
         document.head.appendChild(script)
-
         await new Promise((res, rej) => { script.onload = res; script.onerror = rej })
-
         if (fill) fill.style.width = '50%'
         if (text) text.textContent = 'Инициализация Python...'
-
-        pyodide = await window.loadPyodide({
-          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/'
-        })
-
+        pyodide = await window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/' })
         if (fill) fill.style.width = '100%'
         if (text) text.textContent = 'Готово!'
-
         await new Promise(r => setTimeout(r, 400))
         renderMode()
-      } catch (e) {
+      } catch {
         const loader = document.getElementById('pyodide-loader')
-        if (loader) loader.innerHTML = `<div style="color:#dc2626; font-size:14px;">❌ Ошибка загрузки Python.<br>Проверь интернет соединение.</div>`
+        if (loader) loader.innerHTML = '<div style="color:#dc2626;font-size:14px;">❌ Ошибка загрузки Python.</div>'
       }
     }
-
+ 
     function setMode(mode) {
       currentMode = mode
       document.getElementById('btn-task').classList.toggle('active', mode === 'task')
       document.getElementById('btn-sandbox').classList.toggle('active', mode === 'sandbox')
       renderMode()
     }
-
+ 
     function renderMode() {
       if (currentMode === 'task') renderTaskMode()
       else renderSandboxMode()
     }
-
+ 
     function renderTaskMode() {
       if (!currentTask) {
-        const shuffled = [...TASKS].sort(() => Math.random() - 0.5)
-        currentTask = shuffled[0]
+        currentTask = [...TASKS].sort(() => Math.random() - 0.5)[0]
         taskSolved = false
       }
-
       const content = document.getElementById('compiler-content')
       content.innerHTML = `
         <div class="compiler-topbar">
@@ -358,11 +357,8 @@
             <div class="compiler-page-title">📋 Задание</div>
             <button class="back-btn" onclick="newTask()">🔀 Новое задание</button>
           </div>
-          <button class="compiler-run-btn" id="run-btn" onclick="runTask()" ${taskSolved ? 'disabled' : ''}>
-            ▶ Запустить
-          </button>
+          <button class="compiler-run-btn" id="run-btn" onclick="runTask()" ${taskSolved ? 'disabled' : ''}>▶ Запустить</button>
         </div>
-
         <div class="compiler-body">
           <div class="task-panel">
             <div class="task-header">
@@ -374,97 +370,69 @@
               ${currentTask.examples.map(e => `<div class="task-example">${e}</div>`).join('')}
             </div>
           </div>
-
           <div class="editor-wrap">
             <div class="editor-label">Твой код</div>
-            <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="# Напиши функцию здесь...
-"></textarea>
+            <div class="code-highlight-wrap">
+              <pre class="code-highlight-pre" id="highlight-pre"></pre>
+              <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="# Напиши функцию здесь..."></textarea>
+            </div>
           </div>
-
           <div class="console-wrap">
-            <div class="console-label">
-              Результат
-              <button class="console-clear-btn" onclick="clearConsole()">Очистить</button>
-            </div>
-            <div class="console-output" id="console-output">
-              <span class="info-line">// Запусти код чтобы увидеть результат</span>
-            </div>
+            <div class="console-label">Результат <button class="console-clear-btn" onclick="clearConsole()">Очистить</button></div>
+            <div class="console-output" id="console-output"><span class="info-line">// Запусти код чтобы увидеть результат</span></div>
           </div>
-
-          ${taskSolved ? `<div class="task-result pass">✅ Задание выполнено! Награда уже получена.</div>` : ''}
+          ${taskSolved ? '<div class="task-result pass">✅ Задание выполнено!</div>' : ''}
         </div>`
-
-      setupTabKey()
+      setupHighlightedEditor('code-editor', 'highlight-pre')
     }
-
+ 
     function newTask() {
-      const shuffled = [...TASKS].sort(() => Math.random() - 0.5)
-      currentTask = shuffled[0]
+      currentTask = [...TASKS].sort(() => Math.random() - 0.5)[0]
       taskSolved = false
       renderTaskMode()
     }
-
+ 
     async function runTask() {
       if (!pyodide || taskSolved) return
-
       const code = document.getElementById('code-editor').value
       const out = document.getElementById('console-output')
       out.innerHTML = '<span class="info-line">// Выполняется...</span>'
-
-      let output = ''
-      let passed = 0
-      let failed = 0
-      let resultLines = []
-
+      let passed = 0, failed = 0, lines = []
+ 
       for (const test of currentTask.tests) {
         try {
-          const fullCode = code + '\nresult = ' + test.call
-          pyodide.runPython(fullCode)
+          pyodide.runPython(code + '\nresult = ' + test.call)
           const result = pyodide.globals.get('result')
-
           const got = typeof result === 'boolean' ? result : (typeof result === 'string' ? result : Number(result))
-          const exp = test.expected
-
-          const ok = String(got) === String(exp)
-          if (ok) {
-            passed++
-            resultLines.push(`<span class="ok-line">✅ ${test.call} → ${got}</span>`)
-          } else {
-            failed++
-            resultLines.push(`<span class="err-line">❌ ${test.call} → получено: ${got}, ожидалось: ${exp}</span>`)
-          }
+          const ok = String(got) === String(test.expected)
+          if (ok) { passed++; lines.push(`<span class="ok-line">✅ ${test.call} → ${got}</span>`) }
+          else { failed++; lines.push(`<span class="err-line">❌ ${test.call} → получено: ${got}, ожидалось: ${test.expected}</span>`) }
         } catch (e) {
-          failed++
-          resultLines.push(`<span class="err-line">❌ ${test.call} → Ошибка: ${e.message}</span>`)
+          failed++; lines.push(`<span class="err-line">❌ ${test.call} → ${e.message}</span>`)
         }
       }
-
-      out.innerHTML = resultLines.join('\n')
-
+ 
+      out.innerHTML = lines.join('\n')
       if (failed === 0) {
-        out.innerHTML += `\n<span class="ok-line">
-🎉 Все тесты пройдены! +${currentTask.reward} 🪙</span>`
+        out.innerHTML += `\n<span class="ok-line">🎉 Все тесты пройдены! +${currentTask.reward} 🪙</span>`
         taskSolved = true
-
         const newMoney = currentMoney + currentTask.reward
         await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
         currentMoney = newMoney
-
         const runBtn = document.getElementById('run-btn')
         if (runBtn) runBtn.disabled = true
-
         const body = document.querySelector('.compiler-body')
         if (body) {
           const div = document.createElement('div')
           div.className = 'task-result pass'
-          div.textContent = '✅ Задание выполнено! Награда уже получена.'
+          div.textContent = '✅ Задание выполнено! Награда получена.'
           body.appendChild(div)
         }
       } else {
         out.innerHTML += `\n<span class="info-line">Пройдено: ${passed}/${currentTask.tests.length}</span>`
       }
     }
-
+ 
     function renderSandboxMode() {
       const content = document.getElementById('compiler-content')
       content.innerHTML = `
@@ -474,43 +442,29 @@
           </div>
           <button class="compiler-run-btn" onclick="runSandbox()">▶ Запустить</button>
         </div>
-
         <div class="compiler-body">
           <div class="editor-wrap">
             <div class="editor-label">Код</div>
-            <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="# Пиши любой Python код...
-print('Hello, World!')
-"></textarea>
+            <div class="code-highlight-wrap">
+              <pre class="code-highlight-pre" id="highlight-pre"></pre>
+              <textarea class="code-editor" id="code-editor" spellcheck="false" placeholder="# Пиши любой Python код...&#10;print('Hello, World!')"></textarea>
+            </div>
           </div>
-
           <div class="console-wrap">
-            <div class="console-label">
-              Консоль
-              <button class="console-clear-btn" onclick="clearConsole()">Очистить</button>
-            </div>
-            <div class="console-output" id="console-output">
-              <span class="info-line">// Запусти код чтобы увидеть вывод</span>
-            </div>
+            <div class="console-label">Консоль <button class="console-clear-btn" onclick="clearConsole()">Очистить</button></div>
+            <div class="console-output" id="console-output"><span class="info-line">// Запусти код чтобы увидеть вывод</span></div>
           </div>
         </div>`
-
-      setupTabKey()
+      setupHighlightedEditor('code-editor', 'highlight-pre')
     }
-
+ 
     async function runSandbox() {
       if (!pyodide) return
-
       const code = document.getElementById('code-editor').value
       const out = document.getElementById('console-output')
       out.innerHTML = ''
-
       let outputLines = []
-
-      pyodide.setStdout({ batched: (text) => outputLines.push(text) })
-      pyodide.setStderr({ batched: (text) => outputLines.push(`<span class="err-line">${text}</span>`) })
-
-      try {
-	    pyodide.runPython(`
+      pyodide.runPython(`
 import builtins
 def _input(prompt=''):
     import js
@@ -518,55 +472,229 @@ def _input(prompt=''):
     return result if result is not None else ''
 builtins.input = _input
 `)
+      pyodide.setStdout({ batched: (t) => outputLines.push(t) })
+      pyodide.setStderr({ batched: (t) => outputLines.push(`<span class="err-line">${t}</span>`) })
+      try {
         await pyodide.runPythonAsync(code)
-        if (outputLines.length === 0) {
-          out.innerHTML = '<span class="info-line">// Код выполнен без вывода</span>'
-        } else {
-          out.innerHTML = outputLines.map(l =>
-            l.startsWith('<span') ? l : `<span class="out-line">${l}</span>`
-          ).join('\n')
-        }
+        out.innerHTML = outputLines.length === 0
+          ? '<span class="info-line">// Код выполнен без вывода</span>'
+          : outputLines.map(l => l.startsWith('<span') ? l : `<span class="out-line">${l}</span>`).join('\n')
       } catch (e) {
         out.innerHTML = `<span class="err-line">${e.message}</span>`
       }
     }
-
+ 
     function clearConsole() {
       const out = document.getElementById('console-output')
       if (out) out.innerHTML = '<span class="info-line">// Очищено</span>'
     }
-
-    function setupTabKey() {
-      const editor = document.getElementById('code-editor')
-      if (!editor) return
-      editor.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab') {
-          e.preventDefault()
-          const start = this.selectionStart
-          const end = this.selectionEnd
-          this.value = this.value.substring(0, start) + '    ' + this.value.substring(end)
-          this.selectionStart = this.selectionEnd = start + 4
-        }
-      })
+ 
+    function showTypingSetup() {
+      clearTypingTimer()
+      typingDiff = null
+      const content = document.getElementById('main-content')
+      content.style.alignItems = 'center'
+      content.style.justifyContent = 'center'
+      content.innerHTML = `
+        <div class="typing-setup-box">
+          <div class="typing-setup-inner">
+            <div class="typing-setup-title">⌨️ Быстрая печать</div>
+ 
+            <div>
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary,#64748b);margin-bottom:12px;">Сложность</div>
+              <div class="typing-diff-btns">
+                <button class="typing-diff-btn" data-diff="easy" onclick="selectDiff('easy')">
+                  <span class="typing-diff-icon">🟢</span>
+                  <span>Лёгкий</span>
+                  <span class="typing-diff-label">50 + 20/сек</span>
+                </button>
+                <button class="typing-diff-btn" data-diff="medium" onclick="selectDiff('medium')">
+                  <span class="typing-diff-icon">🟡</span>
+                  <span>Средний</span>
+                  <span class="typing-diff-label">100 + 30/сек</span>
+                </button>
+                <button class="typing-diff-btn" data-diff="hard" onclick="selectDiff('hard')">
+                  <span class="typing-diff-icon">🔴</span>
+                  <span>Тяжёлый</span>
+                  <span class="typing-diff-label">150 + 50/сек</span>
+                </button>
+              </div>
+            </div>
+ 
+            <div style="font-size:13px;color:var(--text-secondary,#64748b);text-align:center;">
+              30 секунд · 3 жизни от ошибок (-50 монет за ошибку)
+            </div>
+ 
+            <button class="typing-start-btn" id="typing-start-btn" onclick="startTyping()" disabled>
+              Начать
+            </button>
+ 
+            <button class="typing-result-btn secondary" onclick="showGameSelect()" style="text-align:center;">
+              ← Назад к играм
+            </button>
+          </div>
+        </div>`
     }
-
+ 
+    function selectDiff(diff) {
+      typingDiff = diff
+      document.querySelectorAll('.typing-diff-btn').forEach(b => b.classList.remove('selected'))
+      document.querySelector(`[data-diff="${diff}"]`).classList.add('selected')
+      document.getElementById('typing-start-btn').disabled = false
+    }
+ 
+    function startTyping() {
+      if (!typingDiff) return
+      const texts = TYPING_TEXTS[typingDiff]
+      typingText = texts[Math.floor(Math.random() * texts.length)]
+      typingErrors = 0
+      typingFinished = false
+      typingTimeLeft = TYPING_CONFIG[typingDiff].time
+ 
+      const content = document.getElementById('main-content')
+      content.style.alignItems = 'stretch'
+      content.style.justifyContent = 'flex-start'
+      content.innerHTML = `
+        <div class="typing-game-layout">
+          <div class="typing-topbar">
+            <div class="typing-topbar-left">
+              <button class="back-btn" onclick="showTypingSetup()">← Назад</button>
+              <div class="typing-page-title">⌨️ ${TYPING_CONFIG[typingDiff].label}</div>
+            </div>
+            <div class="typing-stats">
+              <div class="typing-errors-badge">❌ <span id="errors-count">0</span> ошибок</div>
+              <div class="typing-timer" id="typing-timer">${typingTimeLeft}с</div>
+            </div>
+          </div>
+ 
+          <div class="typing-display-wrap" id="typing-display-wrap">
+            <pre class="typing-display-pre" id="typing-target">${escHtml(typingText)}</pre>
+            <pre class="typing-chars-overlay" id="typing-chars"></pre>
+            <textarea class="typing-input-overlay" id="typing-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+          </div>
+        </div>`
+ 
+      const input = document.getElementById('typing-input')
+      input.focus()
+      input.addEventListener('input', onTypingInput)
+ 
+      typingTimer = setInterval(() => {
+        typingTimeLeft--
+        const el = document.getElementById('typing-timer')
+        if (!el) { clearTypingTimer(); return }
+        el.textContent = typingTimeLeft + 'с'
+        if (typingTimeLeft <= 10) el.classList.add('urgent')
+        if (typingTimeLeft <= 0) {
+          clearTypingTimer()
+          finishTyping(false)
+        }
+      }, 1000)
+    }
+ 
+    function onTypingInput() {
+      if (typingFinished) return
+      const input = document.getElementById('typing-input')
+      const typed = input.value
+      const target = typingText
+      const charsEl = document.getElementById('typing-chars')
+ 
+      let html = ''
+      let errorCount = 0
+ 
+      for (let i = 0; i < typed.length; i++) {
+        if (i < target.length) {
+          if (typed[i] === target[i]) {
+            html += `<span class="char-correct">${escHtml(typed[i])}</span>`
+          } else {
+            html += `<span class="char-wrong">${escHtml(target[i])}</span>`
+            errorCount++
+          }
+        }
+      }
+ 
+      charsEl.innerHTML = html
+      typingErrors = errorCount
+      document.getElementById('errors-count').textContent = errorCount
+ 
+      if (typed === target) {
+        clearTypingTimer()
+        finishTyping(true)
+      }
+    }
+ 
+    function clearTypingTimer() {
+      if (typingTimer) { clearInterval(typingTimer); typingTimer = null }
+    }
+ 
+    async function finishTyping(completed) {
+      typingFinished = true
+      clearTypingTimer()
+ 
+      const cfg = TYPING_CONFIG[typingDiff]
+      const secsLeft = typingTimeLeft
+      const errorPenalty = typingErrors * 50
+      let reward = cfg.base + secsLeft * cfg.perSec - errorPenalty
+      if (reward < 0) reward = 0
+      if (!completed) reward = Math.floor(reward * 0.3)
+ 
+      const newMoney = currentMoney + reward
+      await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
+      currentMoney = newMoney
+ 
+      const content = document.getElementById('main-content')
+      content.style.alignItems = 'center'
+      content.style.justifyContent = 'center'
+      content.innerHTML = `
+        <div class="typing-setup-box">
+          <div class="typing-result-box">
+            <div class="typing-result-title">${completed ? '🏆 Завершено!' : '⏱ Время вышло!'}</div>
+            <div class="typing-result-grid">
+              <div class="typing-stat-card good">
+                <div class="typing-stat-label">Сложность</div>
+                <div class="typing-stat-value">${cfg.label}</div>
+              </div>
+              <div class="typing-stat-card ${typingErrors > 0 ? 'bad' : 'good'}">
+                <div class="typing-stat-label">Ошибок</div>
+                <div class="typing-stat-value">${typingErrors}</div>
+              </div>
+              <div class="typing-stat-card info">
+                <div class="typing-stat-label">Осталось секунд</div>
+                <div class="typing-stat-value">${completed ? secsLeft : 0}</div>
+              </div>
+              <div class="typing-stat-card bad">
+                <div class="typing-stat-label">Штраф за ошибки</div>
+                <div class="typing-stat-value">-${errorPenalty} 🪙</div>
+              </div>
+            </div>
+            <div class="typing-result-reward">
+              💰 Награда
+              <div class="typing-result-amount">+${reward} 🪙</div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button class="typing-result-btn secondary" style="flex:1;" onclick="showGameSelect()">← Игры</button>
+              <button class="typing-result-btn primary" style="flex:1;" onclick="showTypingSetup()">Ещё раз</button>
+            </div>
+          </div>
+        </div>`
+    }
+ 
     function toggleDropdown(e) {
       e.stopPropagation()
       document.getElementById('profile-btn').classList.toggle('open')
     }
-
+ 
     document.addEventListener('click', function(e) {
       const profile = document.getElementById('profile-btn')
       if (profile && !profile.contains(e.target)) profile.classList.remove('open')
     })
-
+ 
     async function logout() {
       await client.auth.signOut()
       window.location.href = 'index.html'
     }
-
+ 
     init()
   </script>
-
+ 
 </body>
 </html>
