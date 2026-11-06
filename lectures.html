@@ -54,14 +54,14 @@
         </div>
 
         <div id="sections-list">
-          <div>Загрузка...</div>
+          <div class="u-ec614c789">Загрузка...</div>
         </div>
 
         <div class="sidebar-divider"></div>
         <button class="sidebar-teacher-btn" id="teacher-sidebar-btn" onclick="openPasswordModal()">
           🔑 Преподаватель
         </button>
-        <button class="add-lecture-btn refactor-inline-7" id="manage-btn" onclick="openManageModal()">
+        <button class="add-lecture-btn u-c8be1ccba" id="manage-btn" hidden style="display:none;" onclick="openManageModal()">
           ⚙️ Управление
         </button>
       </div>
@@ -145,7 +145,7 @@
           <option value="__new__">+ Создать новый раздел</option>
         </select>
 
-        <div class="refactor-inline-8" id="new-section-wrap">
+        <div id="new-section-wrap" class="u-c8be1ccba">
           <div class="modal-label">Название нового раздела</div>
           <input type="text" id="new-section-input" placeholder="Например: Раздел 1. Основы">
         </div>
@@ -157,15 +157,15 @@
         <div class="file-drop-zone" id="add-file-zone" onclick="document.getElementById('add-file-input').click()">
           📄 Нажми чтобы выбрать .json файл
         </div>
-        <input class="refactor-inline-9" type="file" id="add-file-input" accept=".json" onchange="onAddFileSelected()">
+        <input type="file" id="add-file-input" accept=".json" onchange="onAddFileSelected()" class="u-6b99de8b6">
 
-        <div class="refactor-inline-10" id="add-preview-wrap">
+        <div id="add-preview-wrap" class="u-c8be1ccba">
           <div class="modal-label">Превью</div>
           <div class="preview-box" id="add-preview-box"></div>
         </div>
 
         <details>
-          <summary>📋 Формат JSON</summary>
+          <summary class="u-56047b54f">📋 Формат JSON</summary>
           <div class="format-hint">
             <pre>{
   "title": "Название",
@@ -208,9 +208,9 @@
           <option value="">— Выбери лекцию —</option>
         </select>
 
-        <div class="refactor-inline-12" id="editor-wrap">
+        <div id="editor-wrap" class="u-c8be1ccba">
           <div class="editor-toolbar">
-            <span>JSON редактор</span>
+            <span class="u-551644647">JSON редактор</span>
             <button class="editor-tool-btn" onclick="formatJson()">Форматировать</button>
             <button class="editor-tool-btn" onclick="validateJson()">Проверить</button>
           </div>
@@ -229,6 +229,6 @@
 
   
 
-<script src="script.js" defer></script>
+  <script defer src="script.js"></script>
 </body>
 </html>

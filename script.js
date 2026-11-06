@@ -1814,6 +1814,7 @@
             isTeacher = false
             document.getElementById('teacher-sidebar-btn').classList.remove('active')
             document.getElementById('teacher-sidebar-btn').textContent = '🔑 Преподаватель'
+            document.getElementById('manage-btn').hidden = true
             document.getElementById('manage-btn').style.display = 'none'
             renderSidebar()
             return
@@ -1833,6 +1834,7 @@
             closeModal('password-modal')
             document.getElementById('teacher-sidebar-btn').classList.add('active')
             document.getElementById('teacher-sidebar-btn').textContent = '✅ Режим преподавателя'
+            document.getElementById('manage-btn').hidden = false
             document.getElementById('manage-btn').style.display = 'flex'
             renderSidebar()
           } else {
@@ -1850,6 +1852,7 @@
         }
 
         async function deleteLecture(lecId) {
+          if (!isTeacher) return
           await client.from('quiz_results').delete().eq('lecture_id', lecId)
           await client.from('lectures').delete().eq('id', lecId)
           closeModal('confirm-modal')
@@ -1869,6 +1872,7 @@
         }
 
         async function deleteSection(secId) {
+          if (!isTeacher) return
           const { data: lecs } = await client.from('lectures').select('id').eq('section_id', secId)
           if (lecs) {
             for (const l of lecs) {
@@ -1882,6 +1886,10 @@
         }
 
         async function openManageModal() {
+          if (!isTeacher) {
+            openPasswordModal()
+            return
+          }
           const addSel = document.getElementById('add-lesson-select')
           const editSel = document.getElementById('edit-lesson-select')
           addSel.innerHTML = '<option value="">— Выбери предмет —</option>'
@@ -1963,6 +1971,7 @@
         }
 
         async function addLecture() {
+          if (!isTeacher) return
           const lessonId = document.getElementById('add-lesson-select').value
           const sectionVal = document.getElementById('add-section-select').value
           const newSecTitle = document.getElementById('new-section-input').value.trim()
@@ -2094,6 +2103,7 @@
         }
 
         async function saveEdit() {
+          if (!isTeacher) return
           const text = document.getElementById('json-editor').value
           const err = document.getElementById('edit-err')
           const success = document.getElementById('edit-success')
@@ -2123,7 +2133,10 @@
           }
         }
 
-        function openModal(id) { document.getElementById(id).classList.add('active') }
+        function openModal(id) {
+          if (id === 'manage-modal' && !isTeacher) { openPasswordModal(); return }
+          document.getElementById(id).classList.add('active')
+        }
         function closeModal(id) { document.getElementById(id).classList.remove('active') }
 
         document.addEventListener('click', function(e) {

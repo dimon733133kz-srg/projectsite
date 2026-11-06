@@ -4068,6 +4068,45 @@ body.dark .typing-input-overlay {
   caret-color: #FDD835;
 }
 
+/* Доступ к управлению лекциями скрыт до ввода пароля преподавателя.
+   Атрибут hidden защищает от устаревшего CSS в кеше браузера. */
+#manage-btn[hidden] { display: none !important; }
+
+/* Десктоп: три большие карточки выбора игр. Мобильные правила ниже не меняем. */
+@media (min-width: 701px) {
+  body[data-page="games"] #main-content > .games-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(100%, 1020px);
+    max-width: 1020px;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  body[data-page="games"] #main-content > .games-grid > .game-card {
+    min-width: 0;
+    min-height: 280px;
+    padding: 38px 26px;
+    border-radius: 20px;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  body[data-page="games"] #main-content > .games-grid .game-card-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 36px;
+  }
+
+  body[data-page="games"] #main-content > .games-grid .game-card-title {
+    font-size: 21px;
+  }
+  body[data-page="games"] #main-content > .games-grid .game-card-desc {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+}
+
 /* =============================================================
   3. АДАПТАЦИЯ ДЛЯ ТЕЛЕФОНОВ — ТОЛЬКО ЗДЕСЬ, В САМОМ КОНЦЕ
 ============================================================= */
