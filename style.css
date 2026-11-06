@@ -1,4 +1,11 @@
-/* ========== 1. СВЕТЛАЯ ТЕМА И ОСНОВНЫЕ СТИЛИ ========== */
+/* =============================================================
+  1. СВЕТЛАЯ ТЕМА И ОСНОВНЫЕ СТИЛИ (ПО УМОЛЧАНИЮ)
+  На всех страницах используется этот блок.
+============================================================= */
+
+
+/* Источник: style.css */
+
 :root {
   
   --header-bg: #2196F3;
@@ -2140,7 +2147,7 @@ textarea.code-editor {
     filter: grayscale(0.8);
     pointer-events: none;
     cursor: not-allowed;
-
+}
 
 .lecture-btn span[onclick] {
     transition: transform 0.2s;
@@ -2149,19 +2156,6 @@ textarea.code-editor {
 
 .lecture-btn span[onclick]:hover {
     transform: scale(1.3);
-}
-
-  body.dark .modal-box {
-    background: #1e293b;
-    color: #f1f5f9;
-    border: 1px solid #334155;
-}
-
-body.dark .modal-label { color: #94a3b8; }
-body.dark input, body.dark select, body.dark textarea {
-    background: #0f172a;
-    color: white;
-    border: 1px solid #334155;
 }
 
 .edit-area {
@@ -2202,14 +2196,6 @@ body.dark input, body.dark select, body.dark textarea {
     display: block; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-body.dark .modal-box {
-    background: #111827 !important;
-    color: #e5e7eb !important;
-    border: 1px solid #374151;
-    width: 90%; 
-    max-width: 900px;
-}
-
 #json-editor {
     width: 100%;
     min-height: 500px; 
@@ -2224,16 +2210,9 @@ body.dark .modal-box {
     line-height: 1.5;
 }
 
-body.dark .modal-label { color: #9ca3af; font-weight: 600; }
-body.dark input, body.dark select {
-    background: #1f2937 !important;
-    color: white !important;
-    border: 1px solid #374151 !important;
-}
-
 #json-editor::-webkit-scrollbar { width: 8px; }
-#json-editor::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
 
+#json-editor::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
 
 .lecture-block-code {
     background: #1e1e1e !important;
@@ -2249,55 +2228,6 @@ body.dark input, body.dark select {
     white-space: pre-wrap; 
     word-break: break-all;
 }
-
-body.dark .modal-overlay {
-    background: rgba(0, 0, 0, 0.8) !important;
-}
-
-body.dark .modal-box, 
-body.dark .modal-content {
-    background: #111827 !important;
-    color: #f3f4f6 !important;
-    border: 1px solid #374151 !important;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-}
-
-
-body.dark input[type="text"], 
-body.dark input[type="password"], 
-body.dark select, 
-body.dark textarea {
-    background: #1f2937 !important;
-    color: #ffffff !important;
-    border: 1px solid #4b5563 !important;
-    padding: 10px;
-}
-
-body.dark #json-editor {
-    background: #000000 !important;
-    color: #4ade80 !important;
-    border: 1px solid #4ade80 !important;
-    width: 100%;
-    min-height: 500px;
-    font-family: monospace;
-}
-  
-body.dark .modal-btn.cancel {
-    background: #374151 !important;
-    color: white !important;
-}
-
-body.dark .modal-label {
-    color: #9ca3af !important;
-}
-
-body.dark .file-drop-zone {
-    border: 2px dashed #4b5563 !important;
-    background: #1f2937 !important;
-    color: #9ca3af !important;
-}
-  
-
 
 #lessons-bar.lessons-bar {
   display: flex !important;
@@ -2342,22 +2272,13 @@ body.dark .file-drop-zone {
   border-color: var(--header-bg2, #1976D2) !important;
   box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3) !important;
 }
-  
+
 #lessons-bar::-webkit-scrollbar {
   display: none !important;
 }
 
-body.dark .typing-stat-card.good { background: #0f2920; border-color: #34d399; }
-body.dark .typing-stat-card.bad { background: #2d1f1f; border-color: #f87171; }
-body.dark .typing-stat-card.info { background: #1e3a5f; border-color: #60a5fa; }
-body.dark .typing-stat-card.reward { background: #1a1500; border-color: #fbbf24; }
-body.dark .typing-stat-label { color: #94a3b8; }
-body.dark .typing-stat-value { color: #e2e8f0; }
-body.dark .quiz-stat-card.correct { background: #0f2920; border-color: #34d399; }
-body.dark .quiz-stat-card.wrong { background: #2d1f1f; border-color: #f87171; }
-body.dark .quiz-stat-card.skipped { background: #1a1500; border-color: #fbbf24; }
-body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
-}
+
+/* Источник: games_extra.css */
 
 .code-highlight-wrap {
   position: relative;
@@ -2571,7 +2492,7 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
   font-family: "Courier New", monospace;
   font-size: 15px;
   line-height: 1.8;
-  color: rgba(226,232,240,0.35);
+  color: rgba(226,232,240,0.76);
   white-space: pre-wrap;
   word-break: break-all;
   overflow-y: auto;
@@ -2686,6 +2607,9 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
 
 .typing-result-btn:hover { opacity: 0.88; }
 
+
+/* Источник: games.html: inline style 1 */
+
 .sorting-layout {
       display: flex;
       flex-direction: column;
@@ -2791,6 +2715,19 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
 .sort-item.si-none  { background: rgba(248,113,113,0.2); border-color: #f87171; color: #f87171; }
 
 .sort-item.si-list  { background: rgba(251,146,60,0.2); border-color: #fb923c; color: #fb923c; }
+
+@keyframes sort-flash-ok {
+      0%   { transform: translateX(-50%) scale(1); }
+      50%  { transform: translateX(-50%) scale(1.4); }
+      100% { transform: translateX(-50%) scale(0); opacity: 0; }
+    }
+
+@keyframes sort-flash-err {
+      0%   { transform: translateX(-50%) scale(1); }
+      25%  { transform: translateX(-50%) translateY(4px); }
+      75%  { transform: translateX(-50%) translateY(-4px); }
+      100% { transform: translateX(-50%) scale(0); opacity: 0; }
+    }
 
 .sort-item.anim-ok  { animation: sort-flash-ok  0.35s ease forwards; }
 
@@ -2969,6 +2906,14 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
       animation: sort-particle 0.6s ease-out forwards;
     }
 
+@keyframes sort-particle {
+      0%   { opacity: 1; transform: translate(0,0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+    }
+
+
+/* Источник: group.html: inline style 1 */
+
 .lessons-bar {
     display: flex !important;
     gap: 12px !important;
@@ -3003,6 +2948,9 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
     color: #fff !important;
     border-color: #1976D2 !important;
   }
+
+
+/* Источник: lectures.html: inline style 1 */
 
 .quiz-overlay {
       display: none;
@@ -3299,6 +3247,9 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
 
 .manage-panel.active { display: flex; }
 
+
+/* Источник: quiz.html: inline style 1 */
+
 .quiz-setup-box { 
       background: var(--bg-card, #fff); 
       border-radius: 20px; 
@@ -3392,6 +3343,9 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
 .quiz-start-btn:active { transform: translateY(0); }
 
 .quiz-start-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+
+/* Источник: settings.html: inline style 1 */
 
 .settings-layout {
       max-width: 600px;
@@ -3488,88 +3442,110 @@ body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
       transform: translateX(22px);
     }
 
-@keyframes sort-flash-ok {
-      0%   { transform: translateX(-50%) scale(1); }
-      50%  { transform: translateX(-50%) scale(1.4); }
-      100% { transform: translateX(-50%) scale(0); opacity: 0; }
-    }
 
-@keyframes sort-flash-err {
-      0%   { transform: translateX(-50%) scale(1); }
-      25%  { transform: translateX(-50%) translateY(4px); }
-      75%  { transform: translateX(-50%) translateY(-4px); }
-      100% { transform: translateX(-50%) scale(0); opacity: 0; }
-    }
+/* Источник: project: style attributes */
 
-@keyframes sort-particle {
-      0%   { opacity: 1; transform: translate(0,0) scale(1); }
-      100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
-    }
+.u-ac3f11f2e { grid-template-columns:repeat(3,1fr);max-width:900px; }
+.u-d9e88f748 { height:1px;background:rgba(255,255,255,0.1);margin:8px; }
+.u-db203cccd { margin-top:auto; }
+.u-a9d3b59a6 { font-size:24px; }
+.u-d2fba0f35 { width:0% }
+.u-32cb3aa02 { font-size:12px;color:#94a3b8; }
+.u-cf8b3e779 { color:#dc2626;font-size:14px; }
+.u-ea53f25c2 { font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary,#64748b);margin-bottom:12px; }
+.u-7e8cb3f43 { font-size:13px;color:var(--text-secondary,#64748b);text-align:center; }
+.u-dac4fe6c9 { text-align:center; }
+.u-6b00e7535 { display:flex;gap:10px; }
+.u-7623f0554 { flex:1; }
+.u-09cc1ce11 { display:flex;align-items:center; }
+.u-290633916 { background:rgba(96,165,250,0.15);border-color:#60a5fa;color:#60a5fa; }
+.u-c4096bcd0 { background:rgba(167,139,250,0.15);border-color:#a78bfa;color:#a78bfa; }
+.u-6c369d224 { background:rgba(52,211,153,0.15);border-color:#34d399;color:#34d399; }
+.u-4b2ca66aa { background:rgba(251,191,36,0.15);border-color:#fbbf24;color:#fbbf24; }
+.u-aec868931 { background:rgba(248,113,113,0.15);border-color:#f87171;color:#f87171; }
+.u-7a0770966 { background:rgba(251,146,60,0.15);border-color:#fb923c;color:#fb923c; }
+.u-7bac2dae3 { font-size:12px;color:#64748b; }
+.u-fcc6adb81 { font-size:12px;color:#92400e;margin-top:4px; }
+.u-7984e3bfd { flex:1;display:flex;align-items:stretch;padding:30px;width:100%; }
+.u-1e885dda2 { padding:12px 16px; font-size:13px; color:rgba(255,255,255,0.4); }
+.u-f2892a2e8 { display: none; }
+.u-e70d18346 { margin: 12px 8px 8px; }
+.u-ec614c789 { padding:20px;font-size:13px;color:rgba(255,255,255,0.4); }
+.u-1e1a9436e { padding:10px 20px 10px 36px;font-size:13px;color:rgba(255,255,255,0.4); }
+.u-aacad5ca4 { background:linear-gradient(to right,#475569,#64748b);color:white; }
+.u-753927c34 { font-size:13px;font-weight:600;color:var(--text-secondary,#94a3b8) }
+.u-064028e7a { color:#64748b }
+.u-676a85962 { color:#94a3b8;font-size:12px; }
+.u-bcc19938a { color:#059669;font-size:12px;font-weight:700;margin-top:8px; }
+.u-c8be1ccba { display:none; }
+.u-6b99de8b6 { display:none }
+.u-56047b54f { font-size:13px;font-weight:700;color:var(--text-secondary,#64748b);cursor:pointer; }
+.u-551644647 { font-size:12px;color:var(--text-secondary,#64748b);font-weight:700; }
+.u-bef507196 { color:#ef4444; font-size:13px; text-align:center; margin-top:15px; font-weight:600; }
+.u-0466783d9 { width:100% }
+.u-6eca02d53 { display:flex; gap:10px; margin-top:20px; }
+.u-12401528d { flex:1; background:#64748b; }
+.u-ebbc48fd8 { color:#94a3b8;padding:20px }
+.u-49cd09213 { display:flex;gap:6px }
+.u-c5c3aa138 { background:var(--bg-card);padding:25px;border-radius:20px;max-width:800px;width:90%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--text); }
+.u-15ed03f85 { margin:0 0 20px 0;font-size:20px;text-align:center; }
+.u-dd2794aec { display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:15px;overflow-y:auto;padding-right:10px;margin-bottom:20px;scrollbar-width:thin; }
+.u-c39dfa717 { background:var(--bg);padding:12px;border-radius:12px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px; }
+.u-59615fb9a { width:70px;height:70px;object-fit:cover;border-radius:8px; }
+.u-72e4ac0b6 { font-size:13px;font-weight:600;line-height:1.2; }
+.u-d73b38bce { font-size:11px;color:var(--accent);font-weight:bold; }
+.u-a426bfcc8 { width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold; }
+.u-e3011ff00 { position:relative;width:600px;height:140px;overflow:hidden;border:3px solid #3b82f6;border-radius:12px;background:#0f172a;box-shadow:0 0 30px rgba(59,130,246,0.3) }
+.u-58546d264 { display:flex;will-change:transform;align-items:center; }
+.u-2f0b8bffb { position:absolute;left:50%;top:0;bottom:0;width:4px;background:#ef4444;z-index:10;transform:translateX(-50%);box-shadow:0 0 10px red; }
+.u-2e1a67308 { margin-top:20px;color:#3b82f6;font-weight:bold;letter-spacing:2px;text-transform:uppercase; }
+.u-768b2e86b { min-width:130px;height:140px;display:flex;align-items:center;justify-content:center;border-right:1px solid #1e293b; }
+.u-43ce3d93f { width:90px;height:90px;object-fit:cover;border-radius:8px; }
+.u-aa64fb7bb { background:var(--bg-card);padding:30px;border-radius:16px;text-align:center;box-shadow:0 0 20px rgba(59,130,246,0.5) }
+.u-d462248a4 { margin-top:0 }
+.u-5cdfbdc7b { border-radius:8px;object-fit:cover;margin:10px 0 }
+.u-824efce4e { padding:10px 20px }
 
-.refactor-inline-1 { flex:1;display:flex;align-items:stretch;padding:30px;width:100%; }
 
-.refactor-inline-2 { padding:12px 16px; font-size:13px; color:rgba(255,255,255,0.4); }
-
-.refactor-inline-3 { display: none; }
-
-.refactor-inline-4 { display: none; }
-
-.refactor-inline-5 { margin: 12px 8px 8px; }
-
-.refactor-inline-6 { padding:20px;font-size:13px;color:rgba(255,255,255,0.4); }
-
-.refactor-inline-7 { display:none; }
-
-.refactor-inline-8 { display:none; }
-
-.refactor-inline-9 { display:none }
-
-.refactor-inline-10 { display:none; }
-
-.refactor-inline-11 { font-size:13px;font-weight:700;color:var(--text-secondary,#64748b);cursor:pointer; }
-
-.refactor-inline-12 { display:none; }
-
-.refactor-inline-13 { font-size:12px;color:var(--text-secondary,#64748b);font-weight:700; }
-
-.lecture-image-figure { max-width: 100%; margin: 20px auto; padding: 12px; border-radius: 12px; background: #eef5fb; border: 1px solid var(--border); text-align: center; }
-.lecture-block-image { max-width: 100%; width: auto; height: auto; max-height: 520px; display: block; object-fit: contain; margin: 0 auto; border-radius: 8px; }
-.lecture-image-figure figcaption { margin-top: 9px; font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+/* Источник: project: common improvements */
 
 
-/* ========== 2. ТЕМНАЯ ТЕМА ========== */
+:root { --text-main: var(--text); --surface-muted: #edf5fc; --control-bg: #ffffff; --control-text: #20304b; }
+body { overflow-x: hidden; }
+button, input, textarea, select { font-family: inherit; }
+img { max-width: 100%; }
+.lecture-image-figure { margin: 20px 0 24px; text-align: center; max-width: 100%; }
+.lecture-block-image { display: block; width: auto; max-width: 100%; max-height: 560px; height: auto; object-fit: contain; margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); }
+.lecture-image-caption { font-size: 13px; margin-top: 9px; color: var(--text-secondary); line-height: 1.5; }
+.saved-test-result { background: linear-gradient(to right, #475569, #64748b); color: #fff; }
+.preview-more { color: #64748b; font-size: 12px; }
+.preview-questions { color: #059669; font-size: 12px; font-weight: 700; margin-top: 8px; }
+.quiz-heart { display: inline-flex; align-items: center; justify-content: center; font-size: 25px; }
+.quiz-heart.lost { opacity: .22; filter: grayscale(1); }
+
+
+
+/* Редактирование имени в профиле */
+.settings-name-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.settings-name-input { flex: 1; min-width: 180px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-input); color: var(--text); font-size: 14px; }
+.settings-name-save { border: 0; border-radius: 10px; padding: 12px 20px; background: var(--accent); color: var(--accent-text); font-weight: 700; cursor: pointer; }
+.settings-name-message { font-size: 13px; margin-top: 10px; min-height: 20px; color: var(--text-secondary); }
+
+/* =============================================================
+  2. ТЁМНАЯ ТЕМА — ТОЛЬКО ЦВЕТА
+  Переключается классом body.dark.
+============================================================= */
+
+
+/* Источник: style.css */
+
 body.dark main { background: var(--bg); }
 
 body.dark .auth-box .switch-link { color: var(--text-secondary); }
 
 body.dark .auth-box select { background: var(--bg-input); color: var(--text); border-color: var(--border); }
 
-body.dark {
-  --header-bg: #1a2332;
-  --header-bg2: #111827;
-  --footer-bg: #0f172a;
-  --accent: #FDD835;
-  --accent-hover: #F9A825;
-  --accent-text: #1a1a1a;
-  --bg: #0f172a;
-  --bg-card: #1e293b;
-  --bg-sidebar: #111827;
-  --bg-sidebar2: #0f172a;
-  --bg-input: #1e293b;
-  --text: #e2e8f0;
-  --text-muted: rgba(255,255,255,0.65);
-  --text-secondary: #94a3b8;
-  --border: #334155;
-  --border-focus: #60a5fa;
-  --shadow: rgba(0,0,0,0.3);
-  --emerald: #22d3ee;
-  --gold: #FDD835;
-  --purple: #60a5fa;
-  --purple-dark: #1e3a5f;
-  --purple-light: #93c5fd;
-  --navy: #1e40af;
-  --white: #1e293b;
-}
+body.dark { --header-bg: #1a2332; --header-bg2: #111827; --footer-bg: #0f172a; --accent: #FDD835; --accent-hover: #F9A825; --accent-text: #1a1a1a; --bg: #0f172a; --bg-card: #1e293b; --bg-sidebar: #111827; --bg-sidebar2: #0f172a; --bg-input: #1e293b; --text: #e2e8f0; --text-muted: rgba(255,255,255,0.65); --text-secondary: #94a3b8; --border: #334155; --border-focus: #60a5fa; --shadow: rgba(0,0,0,0.3); --emerald: #22d3ee; --gold: #FDD835; --purple: #60a5fa; --purple-dark: #1e3a5f; --purple-light: #93c5fd; --navy: #1e40af; --white: #1e293b; }
 
 body.dark { background: var(--bg); color: var(--text); }
 
@@ -3843,23 +3819,15 @@ body.dark .group-empty-text { color: var(--text-secondary); }
 
 body.dark .lecture-placeholder-text { color: var(--text-secondary); }
 
-body.dark .card {
-  background: #c8a800;
-  color: #1a1a1a;
-}
+body.dark .card { background: #c8a800; color: #1a1a1a; }
 
-body.dark .card:hover {
-  background: #e6c200;
-}
+body.dark .card:hover { background: #e6c200; }
 
 body.dark .card-title { color: #1a1a1a; }
 
 body.dark .card-desc { color: rgba(0,0,0,0.6); }
 
-body.dark .game-card {
-  background: #c8a800;
-  color: #1a1a1a;
-}
+body.dark .game-card { background: #c8a800; color: #1a1a1a; }
 
 body.dark .game-card:hover { background: #e6c200; }
 
@@ -3867,10 +3835,7 @@ body.dark .game-card-title { color: #1a1a1a; }
 
 body.dark .game-card-desc { color: rgba(0,0,0,0.6); }
 
-body.dark .quiz-result-box {
-  background: #1e293b;
-  color: #e2e8f0;
-}
+body.dark .quiz-result-box { background: #1e293b; color: #e2e8f0; }
 
 body.dark .quiz-result-title { color: #e2e8f0; }
 
@@ -3898,14 +3863,62 @@ body.dark .quiz-result-breakdown { background: #111827; color: #94a3b8; }
 
 body.dark .quiz-result-btn { background: #FDD835; color: #1a1a1a; }
 
-body.dark .forgot-link a {
-  color: #60a5fa;
-}
+body.dark .forgot-link a { color: #60a5fa; }
 
-body.dark .lecture-btn.locked {
-    background: rgba(255, 255, 255, 0.05);
-    color: #64748b;
-}
+body.dark .lecture-btn.locked { background: rgba(255, 255, 255, 0.05); color: #64748b; }
+
+body.dark .modal-box { background: #1e293b; color: #f1f5f9; border: 1px solid #334155; }
+
+body.dark .modal-label { color: #94a3b8; }
+
+body.dark input, body.dark select, body.dark textarea { background: #0f172a; color: white; border: 1px solid #334155; }
+
+body.dark .modal-box { background: #111827 !important; color: #e5e7eb !important; border: 1px solid #374151; }
+
+body.dark .modal-label { color: #9ca3af; }
+
+body.dark input, body.dark select { background: #1f2937 !important; color: white !important; border: 1px solid #374151 !important; }
+
+body.dark .modal-overlay { background: rgba(0, 0, 0, 0.8) !important; }
+
+body.dark .modal-box, 
+body.dark .modal-content { background: #111827 !important; color: #f3f4f6 !important; border: 1px solid #374151 !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+
+body.dark input[type="text"], 
+body.dark input[type="password"], 
+body.dark select, 
+body.dark textarea { background: #1f2937 !important; color: #ffffff !important; border: 1px solid #4b5563 !important; }
+
+body.dark #json-editor { background: #000000 !important; color: #4ade80 !important; border: 1px solid #4ade80 !important; }
+
+body.dark .modal-btn.cancel { background: #374151 !important; color: white !important; }
+
+body.dark .modal-label { color: #9ca3af !important; }
+
+body.dark .file-drop-zone { border: 2px dashed #4b5563 !important; background: #1f2937 !important; color: #9ca3af !important; }
+
+body.dark .typing-stat-card.good { background: #0f2920; border-color: #34d399; }
+
+body.dark .typing-stat-card.bad { background: #2d1f1f; border-color: #f87171; }
+
+body.dark .typing-stat-card.info { background: #1e3a5f; border-color: #60a5fa; }
+
+body.dark .typing-stat-card.reward { background: #1a1500; border-color: #fbbf24; }
+
+body.dark .typing-stat-label { color: #94a3b8; }
+
+body.dark .typing-stat-value { color: #e2e8f0; }
+
+body.dark .quiz-stat-card.correct { background: #0f2920; border-color: #34d399; }
+
+body.dark .quiz-stat-card.wrong { background: #2d1f1f; border-color: #f87171; }
+
+body.dark .quiz-stat-card.skipped { background: #1a1500; border-color: #fbbf24; }
+
+body.dark .quiz-stat-card.total { background: #1e3a5f; border-color: #60a5fa; }
+
+
+/* Источник: games_extra.css */
 
 body.dark .typing-setup-inner { background: #1e293b; }
 
@@ -3935,9 +3948,15 @@ body.dark .typing-result-btn.secondary { background: #334155; color: #e2e8f0; }
 
 body.dark .code-highlight-pre { background: #0a0f1e; }
 
+
+/* Источник: group.html: inline style 1 */
+
 body.dark .lessons-bar { background: #1a1a1a !important; border-color: #333 !important; }
 
 body.dark .lesson-tab-btn { background: #2d2d2d !important; color: #ccc !important; border-color: #444 !important; }
+
+
+/* Источник: lectures.html: inline style 1 */
 
 body.dark .quiz-box { background: #1e293b; }
 
@@ -3983,34 +4002,79 @@ body.dark .lecture-btn.locked { color: #4b5563 !important; }
 
 body.dark .lesson-selector { background: rgba(255,255,255,0.08); }
 
+
+/* Источник: quiz.html: inline style 1 */
+
 body.dark .quiz-setup-box { border-color: #334155; }
 
 body.dark .quiz-lesson-select { border-color: #334155; }
 
 body.dark .quiz-setup-opt { border-color: #334155; }
 
+
+/* Источник: project: neutral dark palette and coverage */
+
+
 body.dark {
-  --header-bg: #1b3248; --header-bg2: #152638; --footer-bg: #162536;
-  --bg: #141d29; --bg-card: #202d3c; --bg-sidebar: #192738;
-  --bg-sidebar2: #172333; --bg-input: #243447;
-  --text: #e2e8f0; --text-secondary: #a9b8ca;
-  --border: #35465a; --border-focus: #83b8e8;
-  --shadow: rgba(0,0,0,.23);
-  --accent: #e5c84b; --accent-hover: #f0d768;
-  --accent-text: #19222c;
-  color-scheme: dark;
+  --header-bg: #243248; --header-bg2: #1d293b; --footer-bg: #1a2432;
+  --bg: #171f2a; --bg-card: #222e3e; --bg-sidebar: #202b3b;
+  --bg-sidebar2: #1c2635; --bg-input: #293748;
+  --text: #e2e9f2; --text-main: #e2e9f2; --text-secondary: #abbad0;
+  --border: #3b4d64; --border-focus: #79aeee;
+  --shadow: rgba(3, 9, 18, .24); --surface-muted: #293748;
+  --control-bg: #293748; --control-text: #e2e9f2;
+  --purple: #8db8f0; --purple-light: #79aeee;
 }
-body.dark .card-desc, body.dark .game-card-desc { color: #c3ccd7; }
-body.dark .card-title, body.dark .game-card-title { color: #f3f6fa; }
-body.dark .card, body.dark .game-card { background: #243448; border-color: #384d62; }
-body.dark .card:hover, body.dark .game-card:hover { background: #2d4056; }
-body.dark input, body.dark select, body.dark textarea { background-color: var(--bg-input); color: var(--text); border-color: var(--border); }
-body.dark input::placeholder, body.dark textarea::placeholder { color: #9eacbe; }
-body.dark .lecture-image-figure { background: #192838; border-color: #3b4d61; }
-body.dark .lecture-image-figure figcaption { color: #bbc9d7; }
+body.dark .card, body.dark .game-card { background: #2a394d; border: 1px solid #3c506a; color: var(--text); }
+body.dark .card:hover, body.dark .game-card:hover { background: #34465d; }
+body.dark .card-title, body.dark .game-card-title { color: var(--text); }
+body.dark .card-desc, body.dark .game-card-desc { color: #bfcee0; }
+body.dark .quiz-setup-title, body.dark .quiz-lesson-select { color: var(--text); }
+body.dark .quiz-lesson-select { background: var(--bg-input); }
+body.dark .quiz-setup-label { color: var(--text-secondary); }
+body.dark .lessons-bar { background: var(--bg-card) !important; border-color: var(--border) !important; }
+body.dark .lesson-tab-btn { background: #2a394d !important; color: var(--text) !important; border-color: var(--border) !important; }
+body.dark .lesson-tab-btn:hover { background: #34465d !important; }
+body.dark .lesson-tab-btn.active { background: #34577b !important; border-color: #5385b7 !important; color: #fff !important; }
+body.dark .lecture-block-code, body.dark .preview-code { background: #17202d; border-color: #3b4d64; color: #d4e1ef; }
+body.dark .lecture-block-heading { color: var(--text); }
+body.dark .lecture-block-paragraph { color: #d0daea; }
+body.dark .quiz-timer { background: #413924; border-color: #ad873b; color: #f6d38d; }
+body.dark .quiz-timer.urgent { background: #493038; border-color: #b97077; color: #ffd0d2; }
+body.dark .sort-game-shell { color: var(--text); }
+body.dark .modal-overlay { background: rgba(9, 15, 24, .82); }
+body.dark .modal-box, body.dark .modal-content { background: var(--bg-card) !important; color: var(--text) !important; }
+body.dark #json-editor { background: #141f2d !important; color: #bedbc8 !important; border: 1px solid var(--border) !important; }
+body.dark input:not([type="checkbox"]):not([type="radio"]), body.dark textarea, body.dark select { background-color: var(--bg-input); color: var(--text); border-color: var(--border); }
+body.dark input::placeholder, body.dark textarea::placeholder { color: #94a8c0; }
+body.dark .quiz-start-btn:disabled { background: #4a5d72; color: #d1d8e3; }
+body.dark .quiz-result-btn { color: #1a2332; }
+body.dark .quiz-stat-label, body.dark .quiz-result-card-label { color: #aebed1; }
+body.dark .typing-setup-inner, body.dark .typing-result-box { background: var(--bg-card); }
+body.dark .typing-diff-btn, body.dark .typing-result-btn.secondary { background: var(--surface-muted); border-color: var(--border); color: var(--text); }
+body.dark .teacher-modal, body.dark .settings-section { background: var(--bg-card); }
+body.dark :focus-visible { outline-color: #79aeee; }
 
 
-/* ========== 3. АДАПТАЦИЯ ДЛЯ ТЕЛЕФОНА ========== */
+
+/* «Быстрая печать»: ввод поверх образца должен быть прозрачным.
+   Общие тёмные стили форм не должны закрывать текст образца. */
+body.dark .typing-input-overlay {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  caret-color: #FDD835;
+}
+
+/* =============================================================
+  3. АДАПТАЦИЯ ДЛЯ ТЕЛЕФОНОВ — ТОЛЬКО ЗДЕСЬ, В САМОМ КОНЦЕ
+============================================================= */
+
+
+/* Источник: style.css */
+
 @media (max-width: 700px) {
   header { padding: 0 16px; height: 68px; }
   .stat-badge span { display: none; }
@@ -4091,13 +4155,31 @@ body.dark .lecture-image-figure figcaption { color: #bbc9d7; }
   .leader-stats .stat-badge span { display: inline !important; }
 }
 
+
+/* Источник: games.html: inline style 1 */
+
 @media (max-width: 600px) {
       .sort-box { width: 92px; height: 54px; margin: 0 3px; }
       .sort-box-label { font-size: 11px; }
       #sort-catch-line { width: 100px; }
     }
 
+
+/* Источник: project: mobile adjustments */
+
 @media (max-width: 700px) {
-  .lecture-image-figure { margin: 14px 0; padding: 8px; }
-  .lecture-block-image { max-height: 65vh; }
+  .lecture-image-figure { margin: 14px 0 20px; }
+  .lecture-block-image { max-height: 360px; border-radius: 9px; }
+  .lecture-image-caption { font-size: 12px; }
+  .quiz-setup-box { padding: 20px 16px; margin: 16px auto; }
+  .quiz-heart { font-size: 21px; }
+  #main-content { padding: 14px !important; min-width: 0; }
+  .settings-row { gap: 12px; }
+  pre, code { overflow-wrap: anywhere; }
 }
+@media (max-width: 420px) {
+  .quiz-setup-title { font-size: 22px; }
+  .lecture-body { min-width: 0; }
+  .lecture-block-code { overflow-x: auto; }
+}
+

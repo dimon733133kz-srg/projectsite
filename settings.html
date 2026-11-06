@@ -51,6 +51,21 @@
       </div>
 
       <div class="settings-section">
+        <div class="settings-section-title">Профиль</div>
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Имя в профиле</div>
+            <div class="settings-row-desc">Это имя увидят другие пользователи. Почта останется прежней.</div>
+          </div>
+        </div>
+        <form class="settings-name-form" id="profile-name-form">
+          <input class="settings-name-input" id="profile-name-input" type="text" minlength="2" maxlength="80" autocomplete="nickname" placeholder="Имя пользователя" required>
+          <button class="settings-name-save" type="submit">Сохранить имя</button>
+        </form>
+        <div class="settings-name-message" id="profile-name-message" role="status"></div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-title">Внешний вид</div>
         <div class="settings-row">
           <div class="settings-row-left">
@@ -77,6 +92,6 @@
 
   
 
-<script src="script.js" defer></script>
+  <script defer src="script.js"></script>
 </body>
 </html>
