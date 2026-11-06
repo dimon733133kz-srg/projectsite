@@ -1055,6 +1055,7 @@
         }
 
         function showForgot() {
+          document.getElementById('register-form').style.display = 'none'
           document.getElementById('login-form').style.display = 'none'
           document.getElementById('forgot-form').style.display = 'block'
         }
