@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body data-page="index">
 
   <header>
     <div class="logo">
@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <div class="auth-box" id="login-form" style="display: none;">
+    <div class="auth-box refactor-inline-3" id="login-form">
       <h1>Вход</h1>
 
       <label>Email</label>
@@ -77,7 +77,7 @@
       </div>
     </div>
 
-    <div class="auth-box" id="forgot-form" style="display: none;">
+    <div class="auth-box refactor-inline-4" id="forgot-form">
       <h1>Восстановление пароля</h1>
 
       <label>Email</label>
@@ -101,166 +101,8 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
-  <script>
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }
+  
 
-    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
-
-    const { createClient } = supabase
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-    let pendingProfile = null
-
-    window.onload = async () => {
-      const { data: { session } } = await client.auth.getSession()
-
-      if (session) {
-        const { data: profile } = await client
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single()
-
-        if (!profile) {
-          const saved = localStorage.getItem('pendingProfile')
-          if (saved) {
-            const p = JSON.parse(saved)
-            await client.from('profiles').insert({
-              id: session.user.id,
-              name: p.name,
-              group: p.group
-            })
-            localStorage.removeItem('pendingProfile')
-          }
-        }
-
-        window.location.href = 'main.html'
-      }
-    }
-
-    function updateGroupPreview() {
-      const prefix = document.getElementById('reg-group-prefix').value
-      const year = document.getElementById('reg-group-year').value
-      const preview = document.getElementById('group-preview')
-
-      if (prefix && year) {
-        preview.innerHTML = `Группа: <span>${prefix}${year}</span>`
-      } else if (prefix) {
-        preview.innerHTML = `Группа: <span>${prefix}__</span>`
-      } else {
-        preview.innerHTML = `Группа: <span>—</span>`
-      }
-    }
-
-    function showLogin() {
-      document.getElementById('register-form').style.display = 'none'
-      document.getElementById('forgot-form').style.display = 'none'
-      document.getElementById('login-form').style.display = 'block'
-    }
-
-    function showRegister() {
-      document.getElementById('login-form').style.display = 'none'
-      document.getElementById('forgot-form').style.display = 'none'
-      document.getElementById('register-form').style.display = 'block'
-    }
-
-    function showForgot() {
-      document.getElementById('login-form').style.display = 'none'
-      document.getElementById('forgot-form').style.display = 'block'
-    }
-
-    function setMessage(id, text, isSuccess = false) {
-      const el = document.getElementById(id)
-      el.textContent = text
-      el.className = 'auth-message' + (isSuccess ? ' success' : '')
-    }
-
-    async function register() {
-      const name = document.getElementById('reg-name').value.trim()
-      const email = document.getElementById('reg-email').value.trim()
-      const password = document.getElementById('reg-password').value
-      const prefix = document.getElementById('reg-group-prefix').value
-      const yearVal = parseInt(document.getElementById('reg-group-year').value)
-
-      if (!name || !prefix || !yearVal || !email || !password) {
-        setMessage('reg-message', 'Заполни все поля!')
-        return
-      }
-
-      if (yearVal < 20 || yearVal > 30) {
-        setMessage('reg-message', 'Год группы должен быть от 20 до 30!')
-        return
-      }
-
-      const group = `${prefix}-${yearVal}`
-
-      localStorage.setItem('pendingProfile', JSON.stringify({ name, group }))
-
-      const { error } = await client.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + window.location.pathname
-        }
-      })
-
-      if (error) {
-        localStorage.removeItem('pendingProfile')
-        setMessage('reg-message', 'Ошибка: ' + error.message)
-        return
-      }
-
-      setMessage('reg-message', '✅ Письмо отправлено! Подтверди email чтобы завершить регистрацию.', true)
-    }
-
-    async function login() {
-      const email = document.getElementById('login-email').value.trim()
-      const password = document.getElementById('login-password').value
-
-      if (!email || !password) {
-        setMessage('login-message', 'Заполни все поля!')
-        return
-      }
-
-      const { data, error } = await client.auth.signInWithPassword({ email, password })
-
-      if (error) {
-        setMessage('login-message', 'Ошибка: ' + error.message)
-        return
-      }
-      
-      if (!data.user.email_confirmed_at) {
-        await client.auth.signOut()
-        setMessage('login-message', 'Сначала подтверди email — проверь почту!')
-        return
-      }
-
-      window.location.href = 'main.html'
-    }
-
-    async function sendReset() {
-      const email = document.getElementById('forgot-email').value.trim()
-
-      if (!email) {
-        setMessage('forgot-message', 'Введи email!')
-        return
-      }
-
-      const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://dimon733133kz-srg.github.io/projectsite/reset.html'
-      })
-
-      if (error) {
-        setMessage('forgot-message', 'Ошибка: ' + error.message)
-        return
-      }
-
-      setMessage('forgot-message', '✅ Письмо отправлено! Проверь почту.', true)
-    }
-  </script>
-
+<script src="script.js" defer></script>
 </body>
 </html>

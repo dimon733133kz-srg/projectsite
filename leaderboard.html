@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body data-page="leaderboard">
 
   <header>
     <div class="logo">
@@ -46,7 +46,7 @@
     <div class="leaderboard-layout">
 
       <div class="leaderboard-sidebar">
-        <a href="main.html" class="back-btn" style="margin: 12px 8px 8px;">← Назад</a>
+        <a href="main.html" class="back-btn refactor-inline-5">← Назад</a>
         <button class="lb-btn active" onclick="setMode('all', this)">🌐 Общий</button>
         <button class="lb-btn" onclick="setMode('groups', this)">🏫 Лучшие из групп</button>
         <button class="lb-btn" onclick="setMode('my', this)">👥 Своя группа</button>
@@ -74,201 +74,8 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
-  <script>
-const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+  
 
-const { createClient } = supabase
-const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-if (localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('dark')
-}  
-
-let allUsers = []
-let currentUser = null
-let mode = 'all'
-let sortType = 'streak'
-let currentAudio = null 
-let shopSounds = {} 
-
-async function init() {
-    const { data: { session } } = await client.auth.getSession()
-    if (!session) { window.location.href = 'index.html'; return }
-
-    const { data: shopItems } = await client
-        .from('shop_items')
-        .select('image_url, audio_url')
-    
-    if (shopItems) {
-        shopItems.forEach(item => {
-            if (item.image_url && item.audio_url) {
-                shopSounds[item.image_url] = item.audio_url;
-            }
-        });
-    }
-
-    const { data: me } = await client
-        .from('profiles')
-        .select('name, "group", profile_bg, profile_avatar, wins, win_streak')
-        .eq('id', session.user.id)
-        .single()
-
-    currentUser = me
-    if (me) {
-        document.getElementById('profile-name').textContent = me.name
-        document.getElementById('wins-count').textContent = me.wins ?? 0
-        document.getElementById('streak-count').textContent = me.win_streak ?? 0
-        if (me.profile_avatar) document.getElementById('profile-avatar-img').src = me.profile_avatar
-        if (me.profile_bg) {
-            const btn = document.getElementById('profile-btn')
-            btn.style.backgroundImage = `url('${me.profile_bg}')`
-            btn.classList.add('has-bg')
-        }
-    }
-
-    const { data: usersData } = await client
-        .from('profiles')
-        .select('name, "group", profile_bg, profile_avatar, wins, win_streak')
-
-    allUsers = usersData || []
-    render()
-}
-
-
-function setMode(m, btn) {
-    mode = m
-    document.querySelectorAll('.lb-btn').forEach(b => b.classList.remove('active'))
-    btn.classList.add('active')
-    render()
-}
-
-function setSort(s, btn) {
-    sortType = s
-    document.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'))
-    btn.classList.add('active')
-    render()
-}
-
-function render() {
-    let users = [...allUsers]
-
-    if (mode === 'groups') {
-        const best = {}
-        users.forEach(u => {
-            const val = sortType === 'streak' ? 'win_streak' : 'wins'
-            if (!best[u.group] || (u[val] || 0) > (best[u.group][val] || 0)) {
-                best[u.group] = u
-            }
-        })
-        users = Object.values(best)
-    }
-
-    if (mode === 'my' && currentUser) {
-        users = users.filter(u => u.group === currentUser.group)
-    }
-
-    users.sort((a, b) => {
-        const valA = sortType === 'streak' ? (a.win_streak ?? 0) : (a.wins ?? 0)
-        const valB = sortType === 'streak' ? (b.win_streak ?? 0) : (b.wins ?? 0)
-        return valB - valA
-    })
-
-    const container = document.getElementById('leaders-list')
-    container.innerHTML = ''
-
-    if (users.length === 0) {
-        container.innerHTML = '<div class="empty-state">Пока никого нет</div>'
-        return
-    }
-
-    users.forEach((u, index) => {
-        const isMe = currentUser && u.name === currentUser.name && u.group === currentUser.group
-        
-        let rankClass = ''
-        let rankLabel = ''
-        if (index === 0) { rankClass = 'rank-gold'; rankLabel = '🥇' }
-        else if (index === 1) { rankClass = 'rank-silver'; rankLabel = '🥈' }
-        else if (index === 2) { rankClass = 'rank-bronze'; rankLabel = '🥉' }
-        else rankLabel = `${index + 1}`
-
-        const el = document.createElement('div')
-        el.className = `leader-card ${rankClass} ${isMe ? 'leader-card-me' : ''}`
-        if (u.profile_bg) el.style.backgroundImage = `url('${u.profile_bg}')`
-
-        el.innerHTML = `
-            <div class="leader-overlay"></div>
-            <div class="leader-inner">
-                <div class="leader-left">
-                    <div class="leader-rank">${rankLabel}</div>
-                    <div class="leader-avatar">
-                        <img src="${u.profile_avatar || 'icons/profile-default.png'}" alt="${u.name}">
-                    </div>
-                    <div class="leader-text">
-                        <div class="leader-name">${u.name}</div>
-                        <div class="leader-group">${u.group}</div>
-                    </div>
-                </div>
-                <div class="leader-stats">
-                    <div class="stat-badge streak">
-                        <img src="icons/streak.png"> <span>${u.win_streak ?? 0}</span>
-                    </div>
-                    <div class="stat-badge wins">
-                        <img src="icons/wins.png"> <span>${u.wins ?? 0}</span>
-                    </div>
-                </div>
-            </div>`
-
-        const soundUrl = shopSounds[u.profile_bg]; 
-        let cardAudio = null;
-
-        if (soundUrl) {
-            cardAudio = new Audio(soundUrl);
-            cardAudio.preload = 'auto';
-        }
-
-        el.onmouseenter = () => {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-            }
-            if (cardAudio) {
-                currentAudio = cardAudio;
-                currentAudio.play().catch(() => { /* бл*/ });
-            }
-        };
-
-        el.onmouseleave = () => {
-            if (cardAudio) {
-                cardAudio.pause();
-                cardAudio.currentTime = 0; // тут сброс звука
-            }
-            if (currentAudio === cardAudio) {
-                currentAudio = null;
-            }
-        };
-
-        container.appendChild(el)
-    })
-}
-
-function toggleDropdown(e) {
-    e.stopPropagation()
-    document.getElementById('profile-btn').classList.toggle('open')
-}
-
-document.addEventListener('click', (e) => {
-    const profile = document.getElementById('profile-btn')
-    if (profile && !profile.contains(e.target)) profile.classList.remove('open')
-})
-
-async function logout() {
-    await client.auth.signOut()
-    window.location.href = 'index.html'
-}
-
-init()
-  </script>
-
+<script src="script.js" defer></script>
 </body>
 </html>

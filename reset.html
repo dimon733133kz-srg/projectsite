@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body data-page="reset">
 
   <header>
     <div class="logo">
@@ -40,53 +40,8 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
-  <script>
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }
+  
 
-    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
-
-    const { createClient } = supabase
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-    function setMessage(text, isSuccess = false) {
-      const el = document.getElementById('reset-message')
-      el.textContent = text
-      el.className = 'auth-message' + (isSuccess ? ' success' : '')
-    }
-
-    async function resetPassword() {
-      const newPass = document.getElementById('new-password').value
-      const confirm = document.getElementById('confirm-password').value
-
-      if (!newPass || !confirm) {
-        setMessage('Заполни оба поля!')
-        return
-      }
-
-      if (newPass.length < 6) {
-        setMessage('Пароль должен быть минимум 6 символов!')
-        return
-      }
-
-      if (newPass !== confirm) {
-        setMessage('Пароли не совпадают!')
-        return
-      }
-
-      const { error } = await client.auth.updateUser({ password: newPass })
-
-      if (error) {
-        setMessage('Ошибка: ' + error.message)
-        return
-      }
-
-      setMessage('✅ Пароль изменён! Перенаправляем...', true)
-      setTimeout(() => window.location.href = 'index.html', 2000)
-    }
-  </script>
-
+<script src="script.js" defer></script>
 </body>
 </html>

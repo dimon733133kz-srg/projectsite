@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body data-page="main">
 
   <header>
     <div class="logo">
@@ -92,73 +92,8 @@
     <div>©2026 Все права защищены.</div>
   </footer>
 
-  <script>
-    const SUPABASE_URL = 'https://rnijptnxsheusvxepiht.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWpwdG54c2hldXN2eGVwaWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0ODgyMTUsImV4cCI6MjA5MTA2NDIxNX0.TZ9u8fJXhS02UX9ulQARcr_ITV4FAOMMaboOOPZzo5w'
+  
 
-    const { createClient } = supabase
-    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-    if (localStorage.getItem('theme') === 'dark') {
-      document.body.classList.add('dark')
-    }  
-
-    async function init() {
-      const { data: { session } } = await client.auth.getSession()
-      if (!session) { window.location.href = 'index.html'; return }
-
-      const { data, error } = await client
-        .from('profiles')
-        .select('name, profile_bg, profile_avatar, wins, win_streak')
-        .eq('id', session.user.id)
-        .single()
-
-      if (error || !data) { window.location.href = 'index.html'; return }
-
-      document.getElementById('profile-name').textContent = data.name
-      document.getElementById('wins-count').textContent = data.wins ?? 0
-      document.getElementById('streak-count').textContent = data.win_streak ?? 0
-
-      if (data.profile_avatar) {
-        document.getElementById('profile-avatar-img').src = data.profile_avatar
-      }
-
-      if (data.profile_bg) {
-        const btn = document.getElementById('profile-btn')
-        btn.style.backgroundImage = `url('${data.profile_bg}')`
-
-const img = document.createElement('img')
-img.src = data.profile_bg
-img.style.position = 'absolute'
-img.style.inset = '0'
-img.style.width = '100%'
-img.style.height = '100%'
-img.style.objectFit = 'contain'
-img.style.zIndex = '0'
-
-btn.appendChild(img)
-
-        btn.classList.add('has-bg')
-      }
-    }
-
-    function toggleDropdown(e) {
-      e.stopPropagation()
-      document.getElementById('profile-btn').classList.toggle('open')
-    }
-
-    document.addEventListener('click', function(e) {
-      const profile = document.getElementById('profile-btn')
-      if (profile && !profile.contains(e.target)) profile.classList.remove('open')
-    })
-
-    async function logout() {
-      await client.auth.signOut()
-      window.location.href = 'index.html'
-    }
-
-    init()
-  </script>
-
+<script src="script.js" defer></script>
 </body>
 </html>
