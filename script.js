@@ -2324,6 +2324,11 @@
         let allLessons = [], completedLectures = []
         let selectedLessonId = null, selectedDifficulty = 'easy', selectedCount = 10, selectedTime = 20
         let quizQuestions = [], quizIndex = 0, quizCorrect = 0, quizWrong = 0, quizLives = 3, quizTimer = null
+        // Protect the setup screen from out-of-order Supabase responses.
+        let setupRevision = 0, setupReady = false
+        let availableDifficulties = { easy: true, medium: false, hard: false }
+        let currentQuizFile = ''
+        const quizDebug = new URLSearchParams(window.location.search).get('debugQuiz') === '1'
 
         async function init() {
           if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark')
@@ -2385,25 +2390,45 @@
 
         async function showSetup() {
           const layout = document.getElementById('quiz-page-layout')
-      
+          const revision = ++setupRevision
+          const lessonId = selectedLessonId
+          setupReady = false
+          const existingStartButton = document.getElementById('start-btn')
+          if (existingStartButton) existingStartButton.disabled = true
+
           let access = { easy: true, medium: false, hard: false }
-          if (selectedLessonId) {
-            const sections = await client.from('sections').select('id').eq('lesson_id', selectedLessonId).order('order', { ascending: true })
-            if (sections.data && sections.data.length > 0) {
-              const s1 = sections.data[0].id
-              const { data: l1 } = await client.from('lectures').select('id').eq('section_id', s1)
-              if (l1 && l1.length > 0 && l1.every(lec => completedLectures.includes(lec.id))) access.medium = true
-          
-              if (sections.data.length > 1) {
-                const s2 = sections.data[1].id
-                const { data: l2 } = await client.from('lectures').select('id').eq('section_id', s2)
-                if (l2 && l2.length > 0 && l2.every(lec => completedLectures.includes(lec.id))) access.hard = true
+          try {
+            if (lessonId != null) {
+              const { data: sections, error: sectionError } = await client
+                .from('sections').select('id').eq('lesson_id', lessonId).order('order', { ascending: true })
+              if (sectionError) throw sectionError
+              if (sections && sections.length > 0) {
+                const { data: l1, error: firstError } = await client.from('lectures').select('id').eq('section_id', sections[0].id)
+                if (firstError) throw firstError
+                if (l1 && l1.length > 0 && l1.every(lec => completedLectures.some(id => String(id) === String(lec.id)))) {
+                  access.medium = true
+                }
+                if (sections.length > 1) {
+                  const { data: l2, error: secondError } = await client.from('lectures').select('id').eq('section_id', sections[1].id)
+                  if (secondError) throw secondError
+                  if (l2 && l2.length > 0 && l2.every(lec => completedLectures.some(id => String(id) === String(lec.id)))) {
+                    access.hard = true
+                  }
+                }
               }
             }
+          } catch (error) {
+            // The locked difficulties remain unavailable if progress cannot be read.
+            console.warn('Не удалось проверить доступ к сложностям викторины', error)
           }
 
-          if (selectedDifficulty === 'medium' && !access.medium) selectedDifficulty = 'easy'
-          if (selectedDifficulty === 'hard' && !access.hard) selectedDifficulty = 'easy'
+          // Never render stale settings over a more recent lesson/difficulty choice.
+          if (revision !== setupRevision || String(lessonId) !== String(selectedLessonId)) return
+          if (!access[selectedDifficulty]) selectedDifficulty = 'easy'
+          availableDifficulties = access
+          setupReady = true
+          const currentLesson = allLessons.find(l => String(l.id) === String(selectedLessonId))
+          const debugFile = currentLesson && currentLesson.quiz ? `${currentLesson.quiz}_${selectedDifficulty}_quiz.json` : 'не выбран'
 
           layout.innerHTML = `
             <div class="quiz-setup-box">
@@ -2454,35 +2479,71 @@
 
               <button class="quiz-start-btn" id="start-btn" onclick="prepareQuiz()">Запустить викторину</button>
               <div id="setup-err" class="u-bef507196"></div>
+              ${quizDebug ? `<p class="quiz-debug-source">Файл вопросов: <code>${debugFile}</code></p>` : ''}
             </div>`
         }
 
         function changeLesson(val) { selectedLessonId = val; showSetup(); }
-        function updateDifficulty(val) { selectedDifficulty = val; showSetup(); }
+        function updateDifficulty(val) {
+          if (!['easy', 'medium', 'hard'].includes(val)) return
+          selectedDifficulty = val
+          showSetup()
+        }
         function updateCount(val) { selectedCount = val; showSetup(); }
         function updateTime(val) { selectedTime = val; showSetup(); }
 
         async function prepareQuiz() {
-          const btn = document.getElementById('start-btn');
-          const err = document.getElementById('setup-err');
-          btn.disabled = true;
-          err.textContent = "";
+          const btn = document.getElementById('start-btn')
+          const err = document.getElementById('setup-err')
+          // The same button is also used for «Ещё раз» on the result screen.
+          const retryFromResults = !btn && !!document.querySelector('.quiz-result-box')
+          if (!retryFromResults && (!setupReady || !btn || !err || btn.disabled)) return
 
-          const lesson = allLessons.find(l => l.id == selectedLessonId);
-          const fileName = `${lesson.quiz}_${selectedDifficulty}_quiz.json`;
-      
+          const lesson = allLessons.find(l => String(l.id) === String(selectedLessonId))
+          const difficulty = selectedDifficulty
+          const lessonId = selectedLessonId
+          const count = selectedCount
+          if (!lesson || !lesson.quiz) {
+            if (err) err.textContent = '⚠️ Не указан файл викторины для выбранной дисциплины.'
+            return
+          }
+          if (!availableDifficulties[difficulty]) {
+            if (err) err.textContent = '⚠️ Эта сложность пока недоступна.'
+            return
+          }
+
+          // Exactly ONE source file is used, matching the selected difficulty.
+          const fileName = `${lesson.quiz}_${difficulty}_quiz.json`
+          if (btn) btn.disabled = true
+          if (err) err.textContent = ''
+          const retryErr = document.getElementById('retry-err')
+          if (retryErr) retryErr.textContent = ''
           try {
-            const res = await fetch(STORAGE_BASE_URL + fileName);
-            if (!res.ok) throw new Error();
-            const json = await res.json();
-            const questions = json.questions || [];
-            if (questions.length === 0) throw new Error();
-        
-            quizQuestions = shuffle(questions).slice(0, Math.min(selectedCount, questions.length));
-            startQuizLoop();
+            // Query parameter avoids stale cached questions after JSON changes in Storage.
+            const url = STORAGE_BASE_URL + encodeURI(fileName) + '?v=' + Date.now()
+            console.info('[Викторина] Загрузка вопросов:', fileName)
+            const res = await fetch(url, { cache: 'no-store' })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const json = await res.json()
+            const questions = json.questions
+            if (!Array.isArray(questions) || !questions.length) {
+              throw new Error('В файле нет массива questions с вопросами')
+            }
+            // A choice changed while the request was pending; ignore the old response.
+            if (String(selectedLessonId) !== String(lessonId) || selectedDifficulty !== difficulty || (!setupReady && !retryFromResults)) return
+            currentQuizFile = fileName
+            quizQuestions = shuffle(questions).slice(0, Math.min(count, questions.length))
+            setupReady = false
+            ++setupRevision
+            startQuizLoop()
           } catch (e) {
-            err.textContent = `⚠️ Для предмета "${lesson.name}" вопросы уровня "${selectedDifficulty}" еще не добавлены.`;
-            btn.disabled = false;
+            console.error('[Викторина] Не удалось загрузить', fileName, e)
+            if (String(selectedLessonId) === String(lessonId) && selectedDifficulty === difficulty) {
+              const message = `⚠️ Не удалось загрузить вопросы уровня «${{easy:'Лёгкий',medium:'Средний',hard:'Сложный'}[difficulty]}» (${fileName}).`
+              if (err) err.textContent = message
+              if (retryErr) retryErr.textContent = message
+              if (btn) btn.disabled = false
+            }
           }
         }
 
@@ -2514,7 +2575,7 @@
             <div class="quiz-game-box">
               <div class="quiz-game-top">
                 <div class="quiz-lives" id="lives-row">${renderHearts()}</div>
-                <div class="quiz-game-counter">${quizIndex + 1} / ${quizQuestions.length}</div>
+                <div class="quiz-game-counter" title="Источник: ${currentQuizFile}">${quizIndex + 1} / ${quizQuestions.length}</div>
                 <div class="quiz-game-timer" id="qtimer">${timeLeft}</div>
               </div>
               <div class="quiz-timer-bar-wrap">
@@ -2608,6 +2669,7 @@
                 <button class="quiz-result-btn u-12401528d" onclick="showSetup()">← Назад</button>
                 <button class="quiz-result-btn u-7623f0554" onclick="prepareQuiz()">Ещё раз</button>
               </div>
+              <p id="retry-err" role="alert"></p>
             </div>`;
         }
 
