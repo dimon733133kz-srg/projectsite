@@ -4072,39 +4072,53 @@ body.dark .typing-input-overlay {
    Атрибут hidden защищает от устаревшего CSS в кеше браузера. */
 #manage-btn[hidden] { display: none !important; }
 
-/* Десктоп: три большие карточки выбора игр. Мобильные правила ниже не меняем. */
+/* Меню игр на ПК: восстановлено по исходной версии проекта.
+   Селектор не зависит от body[data-page] и работает с прошлой версией HTML.
+   Мобильные правила ниже оставлены нетронутыми. */
 @media (min-width: 701px) {
-  body[data-page="games"] #main-content > .games-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: min(100%, 1020px);
-    max-width: 1020px;
-    gap: 24px;
+  #main-content > .games-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    max-width: 900px !important;
+    gap: 20px !important;
+    margin: 0 auto !important;
     align-items: stretch;
   }
-
-  body[data-page="games"] #main-content > .games-grid > .game-card {
+  #main-content > .games-grid > .game-card {
     min-width: 0;
-    min-height: 280px;
-    padding: 38px 26px;
-    border-radius: 20px;
+    min-height: 221px;
+    padding: 36px 24px;
+    border-radius: 18px;
+    gap: 14px;
     justify-content: center;
-    gap: 18px;
   }
+  #main-content > .games-grid .game-card-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
+  }
+  #main-content > .games-grid .game-card-title { font-size: 18px; }
+  #main-content > .games-grid .game-card-desc { font-size: 13px; }
+}
 
-  body[data-page="games"] #main-content > .games-grid .game-card-icon {
-    width: 80px;
-    height: 80px;
-    font-size: 36px;
-  }
-
-  body[data-page="games"] #main-content > .games-grid .game-card-title {
-    font-size: 21px;
-  }
-  body[data-page="games"] #main-content > .games-grid .game-card-desc {
-    font-size: 14px;
-    line-height: 1.55;
-  }
+.lecture-progress-error {
+  margin: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--bg-card);
+  line-height: 1.5;
+}
+.lecture-progress-error button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--header-bg);
+  color: white;
+  padding: 6px 12px;
+  cursor: pointer;
+  font: inherit;
 }
 
 /* =============================================================

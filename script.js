@@ -1432,8 +1432,9 @@
           }
 
           await loadTeacherPassword()
+          // Restore saved quiz results BEFORE the sidebar calculates locked lectures.
+          if (!await loadCompletedLectures()) return
           await loadLessons()
-          await loadCompletedLectures()
         }
 
         async function loadTeacherPassword() {
@@ -1458,11 +1459,33 @@
         }
 
         async function loadCompletedLectures() {
-          const { data } = await client
+          const { data, error } = await client
             .from('quiz_results')
             .select('lecture_id')
             .eq('user_id', currentUserId)
-          completedLectureIds = data ? data.map(d => d.lecture_id) : []
+
+          if (error) {
+            console.error('Не удалось загрузить сохранённые результаты лекций:', error)
+            // Do not render a misleading list with all lectures locked on network failure.
+            document.getElementById('sections-list').innerHTML =
+              '<div class="lecture-progress-error">Не удалось загрузить сохранённый прогресс. ' +
+              '<button type="button" onclick="retryLectureProgress()">Повторить</button></div>'
+            return false
+          }
+
+          // IDs from different queries can be numbers or strings. Compare consistently.
+          completedLectureIds = [...new Set((data || [])
+            .filter(row => row.lecture_id != null)
+            .map(row => String(row.lecture_id)))]
+
+          if (allSections.length > 0) renderSidebar()
+          return true
+        }
+
+        async function retryLectureProgress() {
+          if (!await loadCompletedLectures()) return
+          if (currentLessonId) await loadSections()
+          else await loadLessons()
         }
 
         async function onLessonChange() {
@@ -1517,16 +1540,17 @@
             let lecturesBtnHtml = ''
 
             sectionLectures.forEach((lec, lIdx) => {
-              const isDone = completedLectureIds.includes(lec.id)
+              const isDone = completedLectureIds.includes(String(lec.id))
           
               let isLocked = false
               if (!allPrevSectionDone) {
                 isLocked = true
               } else if (lIdx > 0) {
                 const prevLec = sectionLectures[lIdx - 1]
-                isLocked = !completedLectureIds.includes(prevLec.id)
+                isLocked = !completedLectureIds.includes(String(prevLec.id))
               }
 
+              if (isDone) isLocked = false
               if (!isDone) sectionAllDone = false
 
               if (isTeacher) {
@@ -1756,13 +1780,18 @@
             const newMoney = currentMoney + reward
             await client.from('profiles').update({ money: newMoney }).eq('id', currentUserId)
             currentMoney = newMoney
-            await client.from('quiz_results').insert({
+            const { error: saveError } = await client.from('quiz_results').insert({
               user_id: currentUserId, lecture_id: quizLectureId,
               correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped,
               total, percent, reward
             })
-            completedLectureIds.push(quizLectureId)
-            renderSidebar()
+            if (!saveError) {
+              const savedId = String(quizLectureId)
+              if (!completedLectureIds.includes(savedId)) completedLectureIds.push(savedId)
+              renderSidebar()
+            } else {
+              console.error('Не удалось сохранить результат теста:', saveError)
+            }
           }
 
           window._lastQuizResult = { correct: quizCorrect, wrong: quizWrong, skipped: quizSkipped, total, percent, reward }
@@ -2174,6 +2203,7 @@
         if (typeof init === "function") window.init = init;
         if (typeof lectureText === "function") window.lectureText = lectureText;
         if (typeof loadCompletedLectures === "function") window.loadCompletedLectures = loadCompletedLectures;
+        if (typeof retryLectureProgress === "function") window.retryLectureProgress = retryLectureProgress;
         if (typeof loadEditLecture === "function") window.loadEditLecture = loadEditLecture;
         if (typeof loadEditLectures === "function") window.loadEditLectures = loadEditLectures;
         if (typeof loadEditSections === "function") window.loadEditSections = loadEditSections;
